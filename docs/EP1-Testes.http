@@ -1,0 +1,51 @@
+@host = http://127.0.0.1:8080
+@contentType = application/json
+@token = COLE_O_TOKEN_AQUI
+
+### 1) Cadastro
+POST {{host}}/api/usuarios
+Content-Type: {{contentType}}
+
+{
+  "nome": "Joao da Silva",
+  "usuario": "joao_silva",
+  "email": "joao@email.com",
+  "senha": "Senha123",
+  "biografia": "Minha bio"
+}
+
+### 2) Login
+POST {{host}}/api/usuarios/login
+Content-Type: {{contentType}}
+
+{
+  "usuario": "joao_silva",
+  "senha": "Senha123"
+}
+
+### 3) Obter usuario por ID
+GET {{host}}/api/usuarios/1
+Authorization: Bearer {{token}}
+
+### 4) Atualizar usuario por ID
+PATCH {{host}}/api/usuarios/1
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "nome": "Joao S Silva",
+  "usuario": "joao_silva",
+  "email": "joao@email.com",
+  "biografia": "Bio atualizada"
+}
+
+### 5) Excluir usuario por ID
+DELETE {{host}}/api/usuarios/1
+Authorization: Bearer {{token}}
+
+### 6) Logout
+POST {{host}}/api/usuarios/logout
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{}
