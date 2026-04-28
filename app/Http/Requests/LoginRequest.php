@@ -18,4 +18,20 @@ class LoginRequest extends FormRequest
             'senha' => ['required', 'string'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'required' => 'O campo :attribute é obrigatório.',
+            'string' => 'O campo :attribute deve ser um texto.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'usuario' => 'usuário',
+            'senha' => 'senha',
+        ];
+    }
 }

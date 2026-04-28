@@ -93,7 +93,16 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             <h2>Resposta</h2>
             <button id="clearOutput" type="button" class="ghost">Limpar</button>
         </div>
-        <pre id="output">Aguardando requisicoes...</pre>
+        <div class="output-stack">
+            <div>
+                <p class="output-label">Aviso amigável</p>
+                <pre id="friendlyOutput">Aguardando requisicoes...</pre>
+            </div>
+            <div>
+                <p class="output-label">JSON bruto</p>
+                <pre id="rawOutput">Aguardando requisicoes...</pre>
+            </div>
+        </div>
     </section>
 </main>
 

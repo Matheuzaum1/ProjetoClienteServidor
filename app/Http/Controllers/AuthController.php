@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -18,41 +19,32 @@ class AuthController extends Controller
             ->first();
 
         if (!$user || !Hash::check($request->string('senha'), $user->password)) {
-            return response()->json([
-                'status' => 'erro',
-                'codigo' => 'CREDENCIAIS_INVALIDAS',
-                'mensagem' => 'Usuario ou senha invalidos',
-                'dados' => (object) [],
-            ], 401);
+            $response = ApiResponse::error('CREDENCIAIS_INVALIDAS', 'Usuário ou senha inválidos', [], 401);
+
+            return response()->json($response['body'], $response['statusCode']);
         }
 
         $token = JWTAuth::fromUser($user);
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'LOGIN_SUCESSO',
-            'mensagem' => 'Login realizado com sucesso',
-            'dados' => [
-                'token' => $token,
-                'usuario' => [
-                    'id' => (string) $user->id,
-                    'nome' => $user->nome,
-                    'email' => $user->email,
-                    'usuario' => $user->usuario,
-                ],
+        $response = ApiResponse::success('LOGIN_SUCESSO', 'Login realizado com sucesso', [
+            'token' => $token,
+            'usuario' => [
+                'id' => (string) $user->id,
+                'nome' => $user->nome,
+                'email' => $user->email,
+                'usuario' => $user->usuario,
             ],
-        ], 200);
+        ]);
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 
     public function logout(): JsonResponse
     {
         auth('api')->logout();
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'LOGOUT_SUCESSO',
-            'mensagem' => 'Logout realizado com sucesso',
-            'dados' => (object) [],
-        ], 200);
+        $response = ApiResponse::success('LOGOUT_SUCESSO', 'Logout realizado com sucesso');
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 }

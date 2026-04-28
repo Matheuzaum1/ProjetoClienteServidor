@@ -1,4 +1,5 @@
-const output = document.getElementById('output');
+const friendlyOutput = document.getElementById('friendlyOutput');
+const rawOutput = document.getElementById('rawOutput');
 const baseUrlInput = document.getElementById('baseUrl');
 const saveBaseUrlButton = document.getElementById('saveBaseUrl');
 const clearOutputButton = document.getElementById('clearOutput');
@@ -6,8 +7,30 @@ const clearOutputButton = document.getElementById('clearOutput');
 const tokenStorageKey = 'ep1_jwt_token';
 const baseUrlStorageKey = 'ep1_api_base_url';
 
-function setOutput(payload) {
-    output.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+function formatFriendlyMessage(result) {
+    if (!result) {
+        return 'Nenhuma resposta recebida.';
+    }
+
+    if (typeof result === 'string') {
+        return result;
+    }
+
+    if (result.erro) {
+        return `Erro: ${result.erro}`;
+    }
+
+    const data = result.data || {};
+    const status = data.status || (result.ok ? 'sucesso' : 'erro');
+    const mensagem = data.mensagem || 'Resposta recebida.';
+
+    return `${status === 'sucesso' ? 'Sucesso' : 'Atenção'}: ${mensagem}`;
+}
+
+function setOutput(result) {
+    const rawValue = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+    friendlyOutput.textContent = formatFriendlyMessage(result);
+    rawOutput.textContent = rawValue;
 }
 
 function getBaseUrl() {
@@ -21,6 +44,9 @@ function saveBaseUrl(value) {
 
 async function request(path, options = {}) {
     const headers = new Headers(options.headers || {});
+    if (!headers.has('Accept')) {
+        headers.set('Accept', 'application/json');
+    }
     if (!headers.has('Content-Type') && options.body) {
         headers.set('Content-Type', 'application/json');
     }
@@ -62,7 +88,7 @@ document.getElementById('registerForm').addEventListener('submit', async (event)
             method: 'POST',
             body: JSON.stringify(payload),
         });
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -76,7 +102,7 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
             method: 'POST',
             body: JSON.stringify(payload),
         });
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -87,7 +113,7 @@ document.getElementById('showForm').addEventListener('submit', async (event) => 
     try {
         const { id } = formToJson(event.currentTarget);
         const result = await request(`/api/usuarios/${encodeURIComponent(id)}`, { method: 'GET' });
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -102,7 +128,7 @@ document.getElementById('updateForm').addEventListener('submit', async (event) =
             method: 'PATCH',
             body: JSON.stringify(body),
         });
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -113,7 +139,7 @@ document.getElementById('deleteForm').addEventListener('submit', async (event) =
     try {
         const { id } = formToJson(event.currentTarget);
         const result = await request(`/api/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -124,7 +150,7 @@ document.getElementById('logoutForm').addEventListener('submit', async (event) =
     try {
         const result = await request('/api/usuarios/logout', { method: 'POST', body: '{}' });
         localStorage.removeItem(tokenStorageKey);
-        setOutput(result.data);
+        setOutput(result);
     } catch (error) {
         setOutput({ erro: error.message });
     }
@@ -132,10 +158,10 @@ document.getElementById('logoutForm').addEventListener('submit', async (event) =
 
 saveBaseUrlButton.addEventListener('click', () => {
     saveBaseUrl(baseUrlInput.value.trim());
-    setOutput({ mensagem: `Servidor definido como ${getBaseUrl()}` });
+    setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
 });
 
 clearOutputButton.addEventListener('click', () => setOutput('Aguardando requisicoes...'));
 
 baseUrlInput.value = getBaseUrl();
-setOutput({ mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' });
+setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' } });

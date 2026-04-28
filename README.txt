@@ -26,22 +26,17 @@ Cliente (Web PHP/HTML/JS):
 
 - PHP 8.2+ (com extensoes comuns de Laravel)
 - Composer
-- MySQL 8+ (ou compativel)
+- MySQL 8+ (ou compativel) ou SQLite local
 
 ==================================================
 3) CONFIGURACAO DE BANCO
 ==================================================
 
-3.1 Criar banco:
-- Nome sugerido: instagram_ep1
+3.1 Banco padrao do projeto:
+- SQLite local em database/database.sqlite
 
-3.2 Configurar arquivo .env na raiz:
-- DB_CONNECTION=mysql
-- DB_HOST=127.0.0.1
-- DB_PORT=3306
-- DB_DATABASE=instagram_ep1
-- DB_USERNAME=<seu_usuario>
-- DB_PASSWORD=<sua_senha>
+3.2 O projeto ja vem configurado para SQLite no arquivo .env.
+- Se quiser usar MySQL, troque as variaveis do .env manualmente.
 
 Observacao:
 - APP_KEY e JWT_SECRET ja podem estar preenchidos.
@@ -56,16 +51,19 @@ Na raiz do projeto:
 1. Instalar dependencias:
    composer install
 
-2. Gerar chave da aplicacao (se necessario):
+2. Garantir que o arquivo do banco SQLite exista:
+   - database/database.sqlite
+
+3. Gerar chave da aplicacao (se necessario):
    php artisan key:generate
 
-3. Gerar segredo JWT (se necessario):
+4. Gerar segredo JWT (se necessario):
    php artisan jwt:secret --force
 
-4. Executar migrations:
+5. Executar migrations:
    php artisan migrate
 
-5. Iniciar API com porta configuravel:
+6. Iniciar API com porta configuravel:
    php artisan serve --host=0.0.0.0 --port=8080
 
 A API ficara disponivel em:
@@ -101,7 +99,23 @@ Padrao de auth para rotas protegidas:
 - Authorization: Bearer <token>
 
 ==================================================
-7) ROTEIRO DE DEMONSTRACAO EM SALA
+7) AUTO-TESTE DA API
+==================================================
+
+Para validar o fluxo completo sem usar Postman:
+
+- php artisan ep1:test --base-url=http://127.0.0.1:8080
+
+Esse comando executa:
+1. Cadastro
+2. Login
+3. Consulta
+4. Atualizacao
+5. Exclusao
+6. Logout
+
+==================================================
+8) ROTEIRO DE DEMONSTRACAO EM SALA
 ==================================================
 
 1. Definir URL/IP e porta no cliente.
@@ -114,7 +128,7 @@ Padrao de auth para rotas protegidas:
 8. Fazer logout.
 
 ==================================================
-8) ARQUIVOS IMPORTANTES
+9) ARQUIVOS IMPORTANTES
 ==================================================
 
 Documentacao:
@@ -136,7 +150,7 @@ Cliente:
 - cliente/assets/styles.css
 
 ==================================================
-9) OBSERVACOES PARA AVALIACAO
+10) OBSERVACOES PARA AVALIACAO
 ==================================================
 
 - Nao modificar codigo no momento da apresentacao.

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AtualizacaoUsuarioRequest;
 use App\Http\Requests\CadastroRequest;
 use App\Models\User;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 
@@ -22,19 +23,16 @@ class UsuarioController extends Controller
             'ativo' => true,
         ]);
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'USUARIO_CRIADO',
-            'mensagem' => 'Usuario cadastrado com sucesso',
-            'dados' => [
-                'id' => (string) $user->id,
-                'nome' => $user->nome,
-                'usuario' => $user->usuario,
-                'email' => $user->email,
-                'biografia' => $user->biografia,
-                'foto_url' => $user->foto_url,
-            ],
+        $response = ApiResponse::success('USUARIO_CRIADO', 'Usuário cadastrado com sucesso', [
+            'id' => (string) $user->id,
+            'nome' => $user->nome,
+            'usuario' => $user->usuario,
+            'email' => $user->email,
+            'biografia' => $user->biografia,
+            'foto_url' => $user->foto_url,
         ], 201);
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 
     public function show(string $id): JsonResponse
@@ -42,27 +40,21 @@ class UsuarioController extends Controller
         $user = User::query()->where('ativo', true)->find($id);
 
         if (!$user) {
-            return response()->json([
-                'status' => 'erro',
-                'codigo' => 'USUARIO_NAO_ENCONTRADO',
-                'mensagem' => 'Usuario nao encontrado',
-                'dados' => (object) [],
-            ], 404);
+            $response = ApiResponse::error('USUARIO_NAO_ENCONTRADO', 'Usuário não encontrado', [], 404);
+
+            return response()->json($response['body'], $response['statusCode']);
         }
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'USUARIO_ENCONTRADO',
-            'mensagem' => 'Dados do usuario recuperados',
-            'dados' => [
-                'id' => (string) $user->id,
-                'nome_completo' => $user->nome,
-                'usuario' => $user->usuario,
-                'email' => $user->email,
-                'biografia' => $user->biografia,
-                'foto_url' => $user->foto_url,
-            ],
-        ], 200);
+        $response = ApiResponse::success('USUARIO_ENCONTRADO', 'Dados do usuário recuperados', [
+            'id' => (string) $user->id,
+            'nome_completo' => $user->nome,
+            'usuario' => $user->usuario,
+            'email' => $user->email,
+            'biografia' => $user->biografia,
+            'foto_url' => $user->foto_url,
+        ]);
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 
     public function update(AtualizacaoUsuarioRequest $request, string $id): JsonResponse
@@ -70,12 +62,9 @@ class UsuarioController extends Controller
         $user = User::query()->where('ativo', true)->find($id);
 
         if (!$user) {
-            return response()->json([
-                'status' => 'erro',
-                'codigo' => 'USUARIO_NAO_ENCONTRADO',
-                'mensagem' => 'Usuario nao encontrado',
-                'dados' => (object) [],
-            ], 404);
+            $response = ApiResponse::error('USUARIO_NAO_ENCONTRADO', 'Usuário não encontrado', [], 404);
+
+            return response()->json($response['body'], $response['statusCode']);
         }
 
         $payload = [
@@ -92,17 +81,14 @@ class UsuarioController extends Controller
 
         $user->update($payload);
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'USUARIO_ATUALIZADO',
-            'mensagem' => 'Usuario atualizado com sucesso',
-            'dados' => [
-                'id' => (string) $user->id,
-                'nome' => $user->nome,
-                'usuario' => $user->usuario,
-                'email' => $user->email,
-            ],
-        ], 200);
+        $response = ApiResponse::success('USUARIO_ATUALIZADO', 'Usuário atualizado com sucesso', [
+            'id' => (string) $user->id,
+            'nome' => $user->nome,
+            'usuario' => $user->usuario,
+            'email' => $user->email,
+        ]);
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 
     public function destroy(string $id): JsonResponse
@@ -110,23 +96,17 @@ class UsuarioController extends Controller
         $user = User::query()->find($id);
 
         if (!$user) {
-            return response()->json([
-                'status' => 'erro',
-                'codigo' => 'USUARIO_NAO_ENCONTRADO',
-                'mensagem' => 'Usuario nao encontrado',
-                'dados' => (object) [],
-            ], 404);
+            $response = ApiResponse::error('USUARIO_NAO_ENCONTRADO', 'Usuário não encontrado', [], 404);
+
+            return response()->json($response['body'], $response['statusCode']);
         }
 
         $user->ativo = false;
         $user->save();
         $user->delete();
 
-        return response()->json([
-            'status' => 'sucesso',
-            'codigo' => 'USUARIO_REMOVIDO',
-            'mensagem' => 'Usuario removido com sucesso',
-            'dados' => (object) [],
-        ], 200);
+        $response = ApiResponse::success('USUARIO_REMOVIDO', 'Usuário removido com sucesso');
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 }
