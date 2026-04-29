@@ -43,10 +43,10 @@
 - [ ] Banco de dados criado e migrations executadas
 - [ ] Conta de teste criada com sucesso
 - [ ] Login retorna token JWT valido
-- [ ] GET /api/usuarios/{id} retorna dados corretos com Bearer token
-- [ ] PATCH /api/usuarios/{id} atualiza o registro esperado
-- [ ] DELETE /api/usuarios/{id} desativa ou remove o usuario
-- [ ] POST /api/usuarios/logout invalida a sessao/token atual
+- [ ] GET /usuarios/{id} retorna dados corretos com Bearer token
+- [ ] PATCH /usuarios/{id} atualiza o registro esperado
+- [ ] DELETE /usuarios/{id} desativa ou remove o usuario
+- [ ] POST /usuarios/logout invalida a sessao/token atual
 - [ ] Cliente web executa todas as operacoes sem erro de CORS
 - [ ] Capturas de tela ou respostas salvas para a apresentacao
 

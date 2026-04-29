@@ -2,26 +2,28 @@
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\File;
 
 Artisan::command('inspire', function () {
     $this->comment('Projeto Cliente/Servidor EP1');
 })->purpose('Display an inspiring message');
 
-Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
+Artisan::command('ep1:test {--base-url=http://10.20.8.23:22222}', function () {
     $baseUrl = rtrim((string) $this->option('base-url'), '/');
     $stamp = now()->format('YmdHis');
+    $emailLocal = substr($stamp, -6);
 
     $payloadCadastro = [
         'nome' => 'Usuario Teste',
         'usuario' => 'usuario_teste_' . $stamp,
-        'email' => 'usuario_teste_' . $stamp . '@email.com',
+        'email' => 'ut' . $emailLocal . '@e.com',
         'senha' => 'Senha123',
         'biografia' => 'Bio inicial do teste',
         'foto' => 'https://example.com/foto.jpg',
     ];
 
     $this->info('1/6 Cadastro...');
-    $cadastro = Http::acceptJson()->post($baseUrl . '/api/usuarios', $payloadCadastro);
+    $cadastro = Http::acceptJson()->post($baseUrl . '/usuarios', $payloadCadastro);
 
     if (!$cadastro->successful()) {
         $this->error('Falha no cadastro.');
@@ -37,7 +39,7 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     }
 
     $this->info('2/6 Login...');
-    $login = Http::acceptJson()->post($baseUrl . '/api/usuarios/login', [
+    $login = Http::acceptJson()->post($baseUrl . '/usuarios/login', [
         'usuario' => $payloadCadastro['usuario'],
         'senha' => $payloadCadastro['senha'],
     ]);
@@ -58,7 +60,7 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     $authed = Http::acceptJson()->withToken($token);
 
     $this->info('3/6 Consulta...');
-    $consulta = $authed->get($baseUrl . '/api/usuarios/' . $usuarioId);
+    $consulta = $authed->get($baseUrl . '/usuarios/' . $usuarioId);
     if (!$consulta->successful()) {
         $this->error('Falha na consulta.');
         $this->line($consulta->body());
@@ -66,7 +68,7 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     }
 
     $this->info('4/6 Atualizacao...');
-    $atualizacao = $authed->patch($baseUrl . '/api/usuarios/' . $usuarioId, [
+    $atualizacao = $authed->patch($baseUrl . '/usuarios/' . $usuarioId, [
         'nome' => 'Usuario Teste Atualizado',
         'usuario' => $payloadCadastro['usuario'],
         'email' => $payloadCadastro['email'],
@@ -81,7 +83,7 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     }
 
     $this->info('5/6 Exclusao...');
-    $exclusao = $authed->delete($baseUrl . '/api/usuarios/' . $usuarioId);
+    $exclusao = $authed->delete($baseUrl . '/usuarios/' . $usuarioId);
     if (!$exclusao->successful()) {
         $this->error('Falha na exclusao.');
         $this->line($exclusao->body());
@@ -89,7 +91,7 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     }
 
     $this->info('6/6 Logout...');
-    $logout = $authed->post($baseUrl . '/api/usuarios/logout', []);
+    $logout = $authed->post($baseUrl . '/usuarios/logout', []);
     if (!$logout->successful()) {
         $this->error('Falha no logout.');
         $this->line($logout->body());
@@ -99,3 +101,22 @@ Artisan::command('ep1:test {--base-url=http://127.0.0.1:8080}', function () {
     $this->info('Auto-teste concluido com sucesso.');
     return self::SUCCESS;
 })->purpose('Executa o fluxo completo do EP1 contra a API');
+
+Artisan::command('ep1:logs {--lines=80}', function () {
+    $logFile = storage_path('logs/laravel.log');
+    $lines = max(10, (int) $this->option('lines'));
+
+    if (!File::exists($logFile)) {
+        $this->warn('Arquivo de log do servidor ainda não existe.');
+        return self::SUCCESS;
+    }
+
+    $content = File::get($logFile);
+    $contentLines = preg_split('/\r\n|\r|\n/', trim($content));
+    $tail = array_slice($contentLines, -$lines);
+
+    $this->info("Mostrando os últimos {$lines} registros de servidor:");
+    $this->line(implode(PHP_EOL, $tail));
+
+    return self::SUCCESS;
+})->purpose('Mostra os logs do servidor Laravel');

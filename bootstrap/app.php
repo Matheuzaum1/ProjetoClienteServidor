@@ -11,15 +11,18 @@ use App\Support\ApiResponse;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->validateCsrfTokens(except: [
+            'usuarios',
+            'usuarios/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->expectsJson()) {
                 $response = ApiResponse::error('NAO_AUTENTICADO', 'Não autenticado.', [], 401);
 
                 return response()->json($response['body'], $response['statusCode']);
@@ -27,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->expectsJson()) {
                 $response = ApiResponse::error('VALIDACAO_FALHOU', 'Dados de entrada inválidos.', [
                     'erros' => $e->errors(),
                 ], 422);

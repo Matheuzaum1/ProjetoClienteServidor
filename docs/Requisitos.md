@@ -70,12 +70,12 @@ Os seguintes itens fazem parte do escopo completo do projeto mas **não estão i
 
 | Método | Rota | Autenticação | RF | Descrição |
 |--------|------|--------------|----|----|
-| `POST` | `/api/usuarios` | ❌ | RF01 | Cadastro de usuário |
-| `POST` | `/api/usuarios/login` | ❌ | RF02 | Login (retorna JWT) |
-| `GET` | `/api/usuarios/{id}` | ✅ JWT | RF02 | Obter dados do usuário |
-| `PATCH` | `/api/usuarios/{id}` | ✅ JWT | RF09 | Atualizar dados do usuário |
-| `DELETE` | `/api/usuarios/{id}` | ✅ JWT | RF01 | Desativar/apagar usuário |
-| `POST` | `/api/usuarios/logout` | ✅ JWT | RF03 | Logout |
+| `POST` | `/usuarios` | ❌ | RF01 | Cadastro de usuário |
+| `POST` | `/usuarios/login` | ❌ | RF02 | Login (retorna JWT) |
+| `GET` | `/usuarios/{id}` | ✅ JWT | RF02 | Obter dados do usuário |
+| `PATCH` | `/usuarios/{id}` | ✅ JWT | RF09 | Atualizar dados do usuário |
+| `DELETE` | `/usuarios/{id}` | ✅ JWT | RF01 | Desativar/apagar usuário |
+| `POST` | `/usuarios/logout` | ✅ JWT | RF03 | Logout |
 
 ---
 

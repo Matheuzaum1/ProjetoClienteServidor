@@ -1,5 +1,5 @@
 <?php
-$baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:8080';
+$baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:25000';
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -20,10 +20,11 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
         <div class="server-card">
             <label for="baseUrl">Servidor (IP + porta)</label>
             <div class="server-row">
-                <input id="baseUrl" value="<?php echo htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8'); ?>" placeholder="http://127.0.0.1:8080">
+                <input id="baseUrl" value="<?php echo htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8'); ?>" placeholder="http://127.0.0.1:25000">
                 <button id="saveBaseUrl" type="button">Salvar</button>
+                <button id="testConnection" type="button" class="ghost">Testar conexão</button>
             </div>
-            <small>Exemplo: http://192.168.0.10:8080</small>
+            <small>Exemplo local: http://127.0.0.1:25000</small>
         </div>
     </section>
 
@@ -101,6 +102,22 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             <div>
                 <p class="output-label">JSON bruto</p>
                 <pre id="rawOutput">Aguardando requisicoes...</pre>
+            </div>
+        </div>
+    </section>
+
+    <section class="card output-card">
+        <div class="output-head">
+            <h2>Logs do Cliente</h2>
+            <div class="output-actions">
+                <button id="refreshClientLogs" type="button" class="ghost">Atualizar</button>
+                <button id="clearClientLogs" type="button" class="ghost">Limpar logs</button>
+            </div>
+        </div>
+        <div class="output-stack">
+            <div>
+                <p class="output-label">Últimas interações</p>
+                <pre id="clientLogs">Nenhum log salvo ainda.</pre>
             </div>
         </div>
     </section>

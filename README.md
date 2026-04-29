@@ -58,10 +58,12 @@ php artisan jwt:secret
 php artisan migrate --seed
 
 # 4. Iniciar servidor (porta configurável)
-php artisan serve --port=8000
+php artisan serve --host=0.0.0.0 --port=22222
 ```
 
-**Servidor rodando em:** `http://localhost:8000`
+**Servidor ouvindo na rede local:** `http://0.0.0.0:22222`
+
+**Acesso a partir de outras máquinas:** use o IP da máquina servidor, por exemplo `http://10.20.8.23:22222`
 
 ### Cliente (PHP/HTML/JS)
 
@@ -72,7 +74,14 @@ php -S localhost:8001 -t cliente/
 
 **Cliente acessível em:** `http://localhost:8001`
 
-Inserir IP/porta do servidor na interface (ex: `http://localhost:8000`)
+Inserir IP/porta do servidor na interface (ex: `http://10.20.8.23:22222`)
+
+Use o botão **Testar conexão** para confirmar que a máquina cliente alcança o servidor antes de executar as operações.
+
+### Logs rápidos
+
+- **Cliente:** use o painel **Logs do Cliente** na interface para ver o histórico local das requisições e do teste de conexão.
+- **Servidor:** execute `php artisan ep1:logs --lines=80` para ler os últimos registros gravados em `storage/logs/laravel.log`.
 
 ---
 
@@ -81,18 +90,18 @@ Inserir IP/porta do servidor na interface (ex: `http://localhost:8000`)
 ### Autenticação
 - Tipo: JWT Bearer Token
 - Header: `Authorization: Bearer <token>`
-- Gerado em: `POST /api/usuarios/login`
+- Gerado em: `POST /usuarios/login`
 
 ### Endpoints
 
 | Método | Rota | Autenticação | Descrição |
 |--------|------|--------------|-----------|
-| `POST` | `/api/usuarios` | ❌ | Cadastro de usuário |
-| `POST` | `/api/usuarios/login` | ❌ | Login (retorna token) |
-| `GET` | `/api/usuarios/{id}` | ✅ | Obter dados de usuário |
-| `PATCH` | `/api/usuarios/{id}` | ✅ | Atualizar usuário |
-| `DELETE` | `/api/usuarios/{id}` | ✅ | Desativar usuário |
-| `POST` | `/api/usuarios/logout` | ✅ | Logout |
+| `POST` | `/usuarios` | ❌ | Cadastro de usuário |
+| `POST` | `/usuarios/login` | ❌ | Login (retorna token) |
+| `GET` | `/usuarios/{id}` | ✅ | Obter dados de usuário |
+| `PATCH` | `/usuarios/{id}` | ✅ | Atualizar usuário |
+| `DELETE` | `/usuarios/{id}` | ✅ | Desativar usuário |
+| `POST` | `/usuarios/logout` | ✅ | Logout |
 
 ### Formato de Resposta
 
@@ -112,7 +121,7 @@ Inserir IP/porta do servidor na interface (ex: `http://localhost:8000`)
 ### 1. Cadastro de Usuário
 
 ```
-Cliente → POST /api/usuarios
+Cliente → POST /usuarios
   { "nome": "João", "usuario": "joao_silva", "email": "joao@example.com", "senha": "senha123", "biografia": "Dev", "foto": "..." }
 Servidor → 201 Created
   { "status": "sucesso", "codigo": "USUARIO_CRIADO", "mensagem": "Usuário cadastrado com sucesso.", "dados": { /* user data */ } }
@@ -121,7 +130,7 @@ Servidor → 201 Created
 ### 2. Login
 
 ```
-Cliente → POST /api/usuarios/login
+Cliente → POST /usuarios/login
   { "usuario": "joao_silva", "senha": "senha123" }
 Servidor → 200 OK
   { "status": "sucesso", "codigo": "LOGIN_SUCESSO", "mensagem": "Login realizado com sucesso.", "dados": { "token": "eyJhbGc..." } }
@@ -131,7 +140,7 @@ Cliente → Armazena token em localStorage
 ### 3. Operações Autenticadas
 
 ```
-Cliente → GET /api/usuarios/1
+Cliente → GET /usuarios/1
   Header: Authorization: Bearer eyJhbGc...
 Servidor → 200 OK
   { "status": "sucesso", "codigo": "USUARIO_ENCONTRADO", "mensagem": "Usuário encontrado.", "dados": { /* user data */ } }

@@ -1,9 +1,9 @@
-@host = http://127.0.0.1:8080
+@host = http://10.20.8.23:22222
 @contentType = application/json
 @token = COLE_O_TOKEN_AQUI
 
 ### 1) Cadastro
-POST {{host}}/api/usuarios
+POST {{host}}/usuarios
 Content-Type: {{contentType}}
 
 {
@@ -15,7 +15,7 @@ Content-Type: {{contentType}}
 }
 
 ### 2) Login
-POST {{host}}/api/usuarios/login
+POST {{host}}/usuarios/login
 Content-Type: {{contentType}}
 
 {
@@ -24,11 +24,11 @@ Content-Type: {{contentType}}
 }
 
 ### 3) Obter usuario por ID
-GET {{host}}/api/usuarios/1
+GET {{host}}/usuarios/1
 Authorization: Bearer {{token}}
 
 ### 4) Atualizar usuario por ID
-PATCH {{host}}/api/usuarios/1
+PATCH {{host}}/usuarios/1
 Content-Type: {{contentType}}
 Authorization: Bearer {{token}}
 
@@ -40,11 +40,11 @@ Authorization: Bearer {{token}}
 }
 
 ### 5) Excluir usuario por ID
-DELETE {{host}}/api/usuarios/1
+DELETE {{host}}/usuarios/1
 Authorization: Bearer {{token}}
 
 ### 6) Logout
-POST {{host}}/api/usuarios/logout
+POST {{host}}/usuarios/logout
 Content-Type: {{contentType}}
 Authorization: Bearer {{token}}
 
