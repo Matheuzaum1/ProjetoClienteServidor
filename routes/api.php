@@ -10,6 +10,7 @@ Route::post('/usuarios/login', [AuthController::class, 'login']);
 Route::middleware('auth:api')->group(function () {
     Route::post('/usuarios/logout', [AuthController::class, 'logout']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
+    Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
 });

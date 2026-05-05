@@ -88,6 +88,21 @@ function saveBaseUrl(value) {
     baseUrlInput.value = value.replace(/\/$/, '');
 }
 
+function buildRequestCandidates(path) {
+    const base = getBaseUrl();
+    const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
+
+    if (!base) {
+        return [sanitizedPath];
+    }
+
+    if (/\/api$/i.test(base)) {
+        return [`${base}${sanitizedPath}`];
+    }
+
+    return [`${base}${sanitizedPath}`, `${base}/api${sanitizedPath}`];
+}
+
 async function request(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Accept')) {
@@ -102,17 +117,51 @@ async function request(path, options = {}) {
         headers.set('Authorization', `Bearer ${token}`);
     }
 
-    const response = await fetch(`${getBaseUrl()}${path}`, {
-        ...options,
-        headers,
-    });
-
-    const text = await response.text();
+    const candidates = buildRequestCandidates(path);
+    let response;
     let data;
-    try {
-        data = text ? JSON.parse(text) : {};
-    } catch {
-        data = text;
+    let usedUrl = '';
+    let lastError;
+
+    for (let index = 0; index < candidates.length; index += 1) {
+        const candidateUrl = candidates[index];
+        const hasNextCandidate = index < candidates.length - 1;
+
+        try {
+            const candidateResponse = await fetch(candidateUrl, {
+                ...options,
+                headers,
+            });
+
+            const text = await candidateResponse.text();
+            let parsed;
+            try {
+                parsed = text ? JSON.parse(text) : {};
+            } catch {
+                parsed = text;
+            }
+
+            if (candidateResponse.status === 404 && hasNextCandidate) {
+                appendClientLog('warn', 'Endpoint nao encontrado, tentando rota alternativa', {
+                    url: candidateUrl,
+                });
+                continue;
+            }
+
+            response = candidateResponse;
+            data = parsed;
+            usedUrl = candidateUrl;
+            break;
+        } catch (error) {
+            lastError = error;
+            if (!hasNextCandidate) {
+                throw error;
+            }
+        }
+    }
+
+    if (!response) {
+        throw lastError || new Error('Falha ao executar requisicao.');
     }
 
     if (response.ok && data && data.dados && data.dados.token) {
@@ -123,28 +172,56 @@ async function request(path, options = {}) {
     appendClientLog(response.ok ? 'info' : 'warn', `Requisição para ${path}`, {
         method: options.method || 'GET',
         status: response.status,
+        url: usedUrl,
     });
 
     return result;
 }
 
 async function testServerConnection() {
-    const response = await fetch(`${getBaseUrl()}/up`, {
-        headers: {
-            Accept: 'application/json, text/plain, */*',
-        },
-    });
+    const base = getBaseUrl();
+    const candidates = /\/api$/i.test(base)
+        ? [`${base}/up`]
+        : [`${base}/up`, `${base}/api/up`];
 
-    if (!response.ok) {
+    let response;
+    let usedUrl = '';
+
+    for (let index = 0; index < candidates.length; index += 1) {
+        const url = candidates[index];
+        const hasNextCandidate = index < candidates.length - 1;
+
+        try {
+            const candidateResponse = await fetch(url, {
+                headers: {
+                    Accept: 'application/json, text/plain, */*',
+                },
+            });
+
+            if (candidateResponse.ok || !hasNextCandidate) {
+                response = candidateResponse;
+                usedUrl = url;
+                break;
+            }
+        } catch (error) {
+            if (!hasNextCandidate) {
+                throw error;
+            }
+        }
+    }
+
+    if (!response || !response.ok) {
+        const status = response ? response.status : 'sem resposta';
         appendClientLog('error', 'Falha ao testar conexão com o servidor', {
             baseUrl: getBaseUrl(),
-            status: response.status,
+            status,
         });
-        throw new Error(`Servidor respondeu com status ${response.status}.`);
+        throw new Error(`Servidor respondeu com status ${status}.`);
     }
 
     appendClientLog('info', 'Conexão com o servidor validada', {
         baseUrl: getBaseUrl(),
+        url: usedUrl,
     });
 
     return {
