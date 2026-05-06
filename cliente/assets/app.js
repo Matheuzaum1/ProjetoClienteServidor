@@ -103,6 +103,21 @@ function buildRequestCandidates(path) {
     return [`${base}${sanitizedPath}`, `${base}/api${sanitizedPath}`];
 }
 
+function shouldAttachAuthHeader(path, method) {
+    const sanitizedPath = path.startsWith('/') ? path : `/${path}`;
+    const normalizedMethod = (method || 'GET').toUpperCase();
+
+    if (sanitizedPath === '/usuarios' && normalizedMethod === 'POST') {
+        return false;
+    }
+
+    if (sanitizedPath === '/usuarios/login' && normalizedMethod === 'POST') {
+        return false;
+    }
+
+    return true;
+}
+
 async function request(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Accept')) {
@@ -113,7 +128,7 @@ async function request(path, options = {}) {
     }
 
     const token = localStorage.getItem(tokenStorageKey);
-    if (token && !headers.has('Authorization')) {
+    if (token && !headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
         headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -166,6 +181,10 @@ async function request(path, options = {}) {
 
     if (response.ok && data && data.dados && data.dados.token) {
         localStorage.setItem(tokenStorageKey, data.dados.token);
+    }
+
+    if (!response.ok && data && data.codigo === 'token_invalido') {
+        localStorage.removeItem(tokenStorageKey);
     }
 
     const result = { status: response.status, ok: response.ok, data };
