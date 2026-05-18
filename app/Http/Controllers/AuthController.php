@@ -120,7 +120,8 @@ class AuthController extends Controller
 
     public function refresh(Request $request): JsonResponse
     {
-        $refresh = $request->input('refresh_token');
+        // Accept refresh token from request body OR HttpOnly cookie (cookie-first fallback)
+        $refresh = $request->input('refresh_token') ?? $request->cookie('refresh_token');
 
         if (!$refresh) {
             $response = ApiResponse::error('REFRESH_MISSING', 'Refresh token ausente', [], 400);
