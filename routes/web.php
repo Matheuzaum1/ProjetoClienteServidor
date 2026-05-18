@@ -14,6 +14,7 @@ Route::post('/usuarios/login', [AuthController::class, 'login']);
 Route::post('/usuarios/logout', [AuthController::class, 'logout']);
 
 Route::middleware('auth:api')->group(function () {
+    Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);

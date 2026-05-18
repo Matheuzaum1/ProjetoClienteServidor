@@ -333,6 +333,43 @@ document.getElementById('logoutForm').addEventListener('submit', async (event) =
     }
 });
 
+// ADM Operations
+document.getElementById('listUsersForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+        const result = await request('/usuarios', { method: 'GET' });
+        setOutput(result);
+    } catch (error) {
+        setOutput({ erro: error.message });
+    }
+});
+
+document.getElementById('editOtherForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+        const payload = formToJson(event.currentTarget);
+        const { id, ...body } = payload;
+        const result = await request(`/usuarios/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        });
+        setOutput(result);
+    } catch (error) {
+        setOutput({ erro: error.message });
+    }
+});
+
+document.getElementById('deleteOtherForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+        const { id } = formToJson(event.currentTarget);
+        const result = await request(`/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        setOutput(result);
+    } catch (error) {
+        setOutput({ erro: error.message });
+    }
+});
+
 saveBaseUrlButton.addEventListener('click', () => {
     saveBaseUrl(baseUrlInput.value.trim());
     setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
@@ -362,3 +399,53 @@ baseUrlInput.value = getBaseUrl();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });
 renderClientLogs();
+
+// Tab Navigation
+const navItems = document.querySelectorAll('.nav-item');
+const tabContents = document.querySelectorAll('.tab-content');
+
+function switchTab(tabName) {
+    // Remove active class from all nav items and tab contents
+    navItems.forEach((item) => item.classList.remove('active'));
+    tabContents.forEach((tab) => tab.classList.remove('active'));
+
+    // Add active class to selected tab
+    const activeNavItem = document.querySelector(`[data-tab="${tabName}"]`);
+    const activeTabContent = document.querySelector(`.tab-content[data-tab="${tabName}"]`);
+
+    if (activeNavItem) {
+        activeNavItem.classList.add('active');
+    }
+    if (activeTabContent) {
+        activeTabContent.classList.add('active');
+    }
+
+    // Scroll to top of feed
+    document.querySelector('.feed').scrollTop = 0;
+}
+
+navItems.forEach((item) => {
+    item.addEventListener('click', () => {
+        const tabName = item.getAttribute('data-tab');
+        switchTab(tabName);
+    });
+});
+
+// Settings panel
+const baseUrlSettingsInput = document.getElementById('baseUrlSettings');
+const saveBaseUrlSettingsButton = document.getElementById('saveBaseUrlSettings');
+
+if (baseUrlSettingsInput) {
+    baseUrlSettingsInput.value = getBaseUrl();
+}
+
+if (saveBaseUrlSettingsButton) {
+    saveBaseUrlSettingsButton.addEventListener('click', () => {
+        if (baseUrlSettingsInput) {
+            saveBaseUrl(baseUrlSettingsInput.value.trim());
+            baseUrlInput.value = getBaseUrl();
+            setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
+            appendClientLog('info', 'Servidor reconfigurado nas configurações', { baseUrl: getBaseUrl() });
+        }
+    });
+}
