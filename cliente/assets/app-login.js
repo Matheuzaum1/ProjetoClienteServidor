@@ -79,10 +79,12 @@ async function request(path, options = {}) {
         const hasNextCandidate = index < candidates.length - 1;
 
         try {
-            const candidateResponse = await fetch(candidateUrl, {
-                ...options,
-                headers,
-            });
+                const candidateResponse = await fetch(candidateUrl, {
+                    ...options,
+                    headers,
+                    // include credentials so HttpOnly refresh cookie is sent
+                    credentials: 'include',
+                });
 
             const text = await candidateResponse.text();
             let parsed;

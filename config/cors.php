@@ -2,11 +2,11 @@
 
 return [
 
-    'paths' => ['up', 'usuarios', 'usuarios/*', 'sanctum/csrf-cookie'],
+    'paths' => ['up', 'usuarios', 'usuarios/*', 'sanctum/csrf-cookie', 'token/refresh'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => ['http://127.0.0.1:8888', 'http://localhost:8888'],
 
     'allowed_origins_patterns' => [],
 
@@ -16,6 +16,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

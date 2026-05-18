@@ -147,6 +147,7 @@ async function request(path, options = {}) {
             const candidateResponse = await fetch(candidateUrl, {
                 ...options,
                 headers,
+                credentials: 'include',
             });
 
             const text = await candidateResponse.text();

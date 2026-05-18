@@ -51,9 +51,11 @@ class AuthController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
+        // Set refresh token as HttpOnly cookie (for client compatibility)
+        $cookie = cookie('refresh_token', $plainRefresh, 60 * 24 * 30, '/', null, false, true, false, 'None');
+
         $response = ApiResponse::success('LOGIN_SUCESSO', 'Login realizado com sucesso', [
             'token' => $token,
-            'refresh_token' => $plainRefresh,
             'usuario' => [
                 'id' => (string) $user->id,
                 'nome' => $user->nome,
@@ -61,6 +63,8 @@ class AuthController extends Controller
                 'usuario' => $user->usuario,
             ],
         ]);
+
+        return response()->json($response['body'], $response['statusCode'])->withCookie($cookie);
 
         Log::info('Login concluído com sucesso', [
             'usuario_id' => $user->id,
@@ -82,8 +86,8 @@ class AuthController extends Controller
             Log::warning('Falha ao invalidar access token no logout', ['error' => $e->getMessage()]);
         }
 
-        // Revoke refresh token if provided in body
-        $refresh = $request->input('refresh_token');
+        // Revoke refresh token if provided in body OR in cookie
+        $refresh = $request->input('refresh_token') ?? $request->cookie('refresh_token');
         if ($refresh) {
             try {
                 $tokenRecord = RefreshToken::where('revoked', false)
@@ -101,15 +105,16 @@ class AuthController extends Controller
                 Log::warning('Falha ao revogar refresh token no logout', ['error' => $e->getMessage()]);
             }
         }
+        // Remove refresh cookie from client
+        $forget = cookie()->forget('refresh_token');
 
         Log::info('Logout executado', [
             'usuario_id' => optional(auth('api')->user())->id,
             'ip' => $request->ip(),
         ]);
-
         $response = ApiResponse::success('LOGOUT_SUCESSO', 'Logout realizado com sucesso');
 
-        return response()->json($response['body'], $response['statusCode']);
+        return response()->json($response['body'], $response['statusCode'])->withCookie($forget);
     }
 
     public function refresh(Request $request): JsonResponse
@@ -121,7 +126,7 @@ class AuthController extends Controller
             return response()->json($response['body'], $response['statusCode']);
         }
 
-        // Find matching refresh token
+        // Find matching refresh token (check cookie or body)
         $candidates = RefreshToken::where('revoked', false)->where('expires_at', '>', Carbon::now())->get();
 
         $found = null;
@@ -158,11 +163,13 @@ class AuthController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
+        // set new refresh token cookie and return new access token
+        $cookie = cookie('refresh_token', $plainRefresh, 60 * 24 * 30, '/', null, false, true, false, 'None');
+
         $response = ApiResponse::success('REFRESH_SUCESSO', 'Tokens renovados com sucesso', [
             'token' => $newAccess,
-            'refresh_token' => $plainRefresh,
         ]);
 
-        return response()->json($response['body'], $response['statusCode']);
+        return response()->json($response['body'], $response['statusCode'])->withCookie($cookie);
     }
 }
