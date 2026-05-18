@@ -12,7 +12,7 @@ Route::post('/usuarios', [UsuarioController::class, 'store']);
 Route::post('/usuarios/login', [AuthController::class, 'login']);
 
 Route::post('/usuarios/logout', [AuthController::class, 'logout']);
-Route::middleware('api')->post('/token/refresh', [AuthController::class, 'refresh']);
+Route::post('/token/refresh', [AuthController::class, 'refresh'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/usuarios', [UsuarioController::class, 'index']);
