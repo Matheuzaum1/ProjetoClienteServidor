@@ -303,7 +303,8 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
         });
             setOutput(result);
             if (result && result.ok && result.data && result.data.dados && result.data.dados.refresh_token) {
-                localStorage.setItem(refreshStorageKey, result.data.dados.refresh_token);
+                // fallback for dev: store refresh token if server returned one (cookie is primary)
+                localStorage.setItem('ep1_fallback_refresh', result.data.dados.refresh_token);
             }
     } catch (error) {
         setOutput({ erro: error.message });

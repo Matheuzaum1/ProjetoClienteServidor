@@ -56,6 +56,7 @@ class AuthController extends Controller
 
         $response = ApiResponse::success('LOGIN_SUCESSO', 'Login realizado com sucesso', [
             'token' => $token,
+            'refresh_token' => $plainRefresh, // fallback for clients that can't accept HttpOnly cookies in dev
             'usuario' => [
                 'id' => (string) $user->id,
                 'nome' => $user->nome,
@@ -168,6 +169,7 @@ class AuthController extends Controller
 
         $response = ApiResponse::success('REFRESH_SUCESSO', 'Tokens renovados com sucesso', [
             'token' => $newAccess,
+            'refresh_token' => $plainRefresh, // fallback when cookie not available
         ]);
 
         return response()->json($response['body'], $response['statusCode'])->withCookie($cookie);

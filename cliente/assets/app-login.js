@@ -116,7 +116,7 @@ async function request(path, options = {}) {
         localStorage.setItem(tokenStorageKey, data.dados.token);
     }
 
-    // refresh_token is now stored in an HttpOnly cookie by the server; no localStorage handling here.
+    // refresh_token is now stored in an HttpOnly cookie by default; server also returns it in body as fallback for dev.
 
     // If unauthorized because access token expired, try refresh once
     if (response.status === 401 && !options._retry) {
@@ -132,6 +132,23 @@ async function request(path, options = {}) {
             }
         } catch (e) {
             console.warn('Refresh attempt failed', e);
+        }
+        // if cookie-based refresh failed, try fallback refresh_token from response body or localStorage
+        try {
+            const fallback = localStorage.getItem('ep1_fallback_refresh');
+            if (fallback) {
+                const refreshResult2 = await request('/token/refresh', { method: 'POST', body: JSON.stringify({ refresh_token: fallback }), _retry: true });
+                if (refreshResult2 && refreshResult2.ok && refreshResult2.data && refreshResult2.data.dados && refreshResult2.data.dados.token) {
+                    const newToken = refreshResult2.data.dados.token;
+                    localStorage.setItem(tokenStorageKey, newToken);
+                    if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
+                        headers.set('Authorization', `Bearer ${newToken}`);
+                    }
+                    return await request(path, { ...options, _retry: true });
+                }
+            }
+        } catch (e) {
+            console.warn('Fallback refresh attempt failed', e);
         }
     }
 
@@ -250,8 +267,9 @@ authLoginForm.addEventListener('submit', async (event) => {
 
         if (result.ok && result.data.dados.usuario) {
             localStorage.setItem(userStorageKey, JSON.stringify(result.data.dados.usuario));
+            // server sets HttpOnly cookie; server also returns refresh_token as fallback for dev — store it as fallback
             if (result.data.dados.refresh_token) {
-                localStorage.setItem(refreshStorageKey, result.data.dados.refresh_token);
+                localStorage.setItem('ep1_fallback_refresh', result.data.dados.refresh_token);
             }
             showMessage('Login realizado com sucesso!', false);
             setTimeout(() => {
