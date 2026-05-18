@@ -1,4 +1,5 @@
 const tokenStorageKey = 'ep1_jwt_token';
+const refreshStorageKey = 'ep1_refresh_token';
 const baseUrlStorageKey = 'ep1_api_base_url';
 const userStorageKey = 'ep1_user_data';
 
@@ -109,12 +110,46 @@ async function request(path, options = {}) {
         throw new Error('Falha ao executar requisição.');
     }
 
+    // Handle access token in response (login/refresh)
     if (response.ok && data && data.dados && data.dados.token) {
         localStorage.setItem(tokenStorageKey, data.dados.token);
     }
 
+    if (response.ok && data && data.dados && data.dados.refresh_token) {
+        localStorage.setItem(refreshStorageKey, data.dados.refresh_token);
+    }
+
+    // If unauthorized because access token expired, try refresh once
+    if (response.status === 401 && !options._retry) {
+        const refreshToken = localStorage.getItem(refreshStorageKey);
+        if (refreshToken) {
+            try {
+                const refreshResult = await request('/token/refresh', {
+                    method: 'POST',
+                    body: JSON.stringify({ refresh_token: refreshToken }),
+                    _retry: true,
+                });
+
+                if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
+                    // retry original request with new token
+                    const newToken = refreshResult.data.dados.token;
+                    localStorage.setItem(tokenStorageKey, newToken);
+                    if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
+                        headers.set('Authorization', `Bearer ${newToken}`);
+                    }
+                    // retry
+                    return await request(path, { ...options, _retry: true });
+                }
+            } catch (e) {
+                // fallthrough to return original 401
+                console.warn('Refresh attempt failed', e);
+            }
+        }
+    }
+
     if (!response.ok && data && data.codigo === 'token_invalido') {
         localStorage.removeItem(tokenStorageKey);
+        localStorage.removeItem(refreshStorageKey);
     }
 
     return { status: response.status, ok: response.ok, data };
@@ -227,6 +262,9 @@ authLoginForm.addEventListener('submit', async (event) => {
 
         if (result.ok && result.data.dados.usuario) {
             localStorage.setItem(userStorageKey, JSON.stringify(result.data.dados.usuario));
+            if (result.data.dados.refresh_token) {
+                localStorage.setItem(refreshStorageKey, result.data.dados.refresh_token);
+            }
             showMessage('Login realizado com sucesso!', false);
             setTimeout(() => {
                 showProfile(result.data.dados.usuario);
@@ -314,9 +352,11 @@ logoutBtn.addEventListener('click', async () => {
     }
 
     try {
+        const refreshToken = localStorage.getItem(refreshStorageKey);
+        const body = refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}';
         const result = await request('/usuarios/logout', {
             method: 'POST',
-            body: '{}',
+            body,
         });
 
         // Independentemente da resposta do servidor (token expirado/erro),

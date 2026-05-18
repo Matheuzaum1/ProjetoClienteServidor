@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use App\Models\RefreshToken;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -37,8 +40,20 @@ class AuthController extends Controller
 
         $token = app('tymon.jwt.auth')->fromUser($user);
 
+        // Create refresh token (rotating)
+        $plainRefresh = Str::random(64);
+        $refreshHash = Hash::make($plainRefresh);
+        $expiresAt = Carbon::now()->addDays(30);
+
+        RefreshToken::create([
+            'user_id' => $user->id,
+            'token_hash' => $refreshHash,
+            'expires_at' => $expiresAt,
+        ]);
+
         $response = ApiResponse::success('LOGIN_SUCESSO', 'Login realizado com sucesso', [
             'token' => $token,
+            'refresh_token' => $plainRefresh,
             'usuario' => [
                 'id' => (string) $user->id,
                 'nome' => $user->nome,
@@ -58,8 +73,33 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        if ($request->bearerToken()) {
-            app('tymon.jwt')->setToken($request->bearerToken())->invalidate();
+        // Try invalidate access token if provided
+        try {
+            if ($request->bearerToken()) {
+                app('tymon.jwt')->setToken($request->bearerToken())->invalidate();
+            }
+        } catch (\Exception $e) {
+            Log::warning('Falha ao invalidar access token no logout', ['error' => $e->getMessage()]);
+        }
+
+        // Revoke refresh token if provided in body
+        $refresh = $request->input('refresh_token');
+        if ($refresh) {
+            try {
+                $tokenRecord = RefreshToken::where('revoked', false)
+                    ->where('expires_at', '>', Carbon::now())
+                    ->get()
+                    ->first(function ($r) use ($refresh) {
+                        return Hash::check($refresh, $r->token_hash);
+                    });
+
+                if ($tokenRecord) {
+                    $tokenRecord->revoked = true;
+                    $tokenRecord->save();
+                }
+            } catch (\Exception $e) {
+                Log::warning('Falha ao revogar refresh token no logout', ['error' => $e->getMessage()]);
+            }
         }
 
         Log::info('Logout executado', [
@@ -68,6 +108,60 @@ class AuthController extends Controller
         ]);
 
         $response = ApiResponse::success('LOGOUT_SUCESSO', 'Logout realizado com sucesso');
+
+        return response()->json($response['body'], $response['statusCode']);
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $refresh = $request->input('refresh_token');
+
+        if (!$refresh) {
+            $response = ApiResponse::error('REFRESH_MISSING', 'Refresh token ausente', [], 400);
+            return response()->json($response['body'], $response['statusCode']);
+        }
+
+        // Find matching refresh token
+        $candidates = RefreshToken::where('revoked', false)->where('expires_at', '>', Carbon::now())->get();
+
+        $found = null;
+        foreach ($candidates as $candidate) {
+            if (Hash::check($refresh, $candidate->token_hash)) {
+                $found = $candidate;
+                break;
+            }
+        }
+
+        if (!$found) {
+            $response = ApiResponse::error('REFRESH_INVALIDO', 'Refresh token inválido ou expirado', [], 401);
+            return response()->json($response['body'], $response['statusCode']);
+        }
+
+        // Rotate: revoke old and create new
+        $found->revoked = true;
+        $found->save();
+
+        $user = $found->user;
+        if (!$user) {
+            $response = ApiResponse::error('USUARIO_NAO_ENCONTRADO', 'Usuário do refresh token não encontrado', [], 404);
+            return response()->json($response['body'], $response['statusCode']);
+        }
+
+        $newAccess = app('tymon.jwt.auth')->fromUser($user);
+        $plainRefresh = Str::random(64);
+        $refreshHash = Hash::make($plainRefresh);
+        $expiresAt = Carbon::now()->addDays(30);
+
+        RefreshToken::create([
+            'user_id' => $user->id,
+            'token_hash' => $refreshHash,
+            'expires_at' => $expiresAt,
+        ]);
+
+        $response = ApiResponse::success('REFRESH_SUCESSO', 'Tokens renovados com sucesso', [
+            'token' => $newAccess,
+            'refresh_token' => $plainRefresh,
+        ]);
 
         return response()->json($response['body'], $response['statusCode']);
     }

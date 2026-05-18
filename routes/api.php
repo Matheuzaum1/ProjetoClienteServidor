@@ -6,10 +6,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/usuarios', [UsuarioController::class, 'store']);
 Route::post('/usuarios/login', [AuthController::class, 'login']);
+Route::post('/usuarios/logout', [AuthController::class, 'logout']);
+Route::post('/token/refresh', [AuthController::class, 'refresh']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/usuarios', [UsuarioController::class, 'index']);
-    Route::post('/usuarios/logout', [AuthController::class, 'logout']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
