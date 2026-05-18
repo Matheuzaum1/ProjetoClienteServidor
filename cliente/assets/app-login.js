@@ -1,5 +1,4 @@
 const tokenStorageKey = 'ep1_jwt_token';
-const refreshStorageKey = 'ep1_refresh_token';
 const baseUrlStorageKey = 'ep1_api_base_url';
 const userStorageKey = 'ep1_user_data';
 
@@ -117,35 +116,22 @@ async function request(path, options = {}) {
         localStorage.setItem(tokenStorageKey, data.dados.token);
     }
 
-    if (response.ok && data && data.dados && data.dados.refresh_token) {
-        localStorage.setItem(refreshStorageKey, data.dados.refresh_token);
-    }
+    // refresh_token is now stored in an HttpOnly cookie by the server; no localStorage handling here.
 
     // If unauthorized because access token expired, try refresh once
     if (response.status === 401 && !options._retry) {
-        const refreshToken = localStorage.getItem(refreshStorageKey);
-        if (refreshToken) {
-            try {
-                const refreshResult = await request('/token/refresh', {
-                    method: 'POST',
-                    body: JSON.stringify({ refresh_token: refreshToken }),
-                    _retry: true,
-                });
-
-                if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
-                    // retry original request with new token
-                    const newToken = refreshResult.data.dados.token;
-                    localStorage.setItem(tokenStorageKey, newToken);
-                    if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
-                        headers.set('Authorization', `Bearer ${newToken}`);
-                    }
-                    // retry
-                    return await request(path, { ...options, _retry: true });
+        try {
+            const refreshResult = await request('/token/refresh', { method: 'POST', _retry: true });
+            if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
+                const newToken = refreshResult.data.dados.token;
+                localStorage.setItem(tokenStorageKey, newToken);
+                if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
+                    headers.set('Authorization', `Bearer ${newToken}`);
                 }
-            } catch (e) {
-                // fallthrough to return original 401
-                console.warn('Refresh attempt failed', e);
+                return await request(path, { ...options, _retry: true });
             }
+        } catch (e) {
+            console.warn('Refresh attempt failed', e);
         }
     }
 
@@ -354,12 +340,8 @@ logoutBtn.addEventListener('click', async () => {
     }
 
     try {
-        const refreshToken = localStorage.getItem(refreshStorageKey);
-        const body = refreshToken ? JSON.stringify({ refresh_token: refreshToken }) : '{}';
-        const result = await request('/usuarios/logout', {
-            method: 'POST',
-            body,
-        });
+        // Server will read refresh token from HttpOnly cookie; no need to send it in the body.
+        const result = await request('/usuarios/logout', { method: 'POST', body: '{}' });
 
         // Independentemente da resposta do servidor (token expirado/erro),
         // remover o token local para não deixar o cliente em estado inconsistente.

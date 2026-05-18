@@ -11,7 +11,6 @@ const clearClientLogsButton = document.getElementById('clearClientLogs');
 const tokenStorageKey = 'ep1_jwt_token';
 const baseUrlStorageKey = 'ep1_api_base_url';
 const clientLogStorageKey = 'ep1_client_logs';
-const refreshStorageKey = 'ep1_refresh_token';
 
 function formatFriendlyMessage(result) {
     if (!result) {
@@ -185,37 +184,29 @@ async function request(path, options = {}) {
         localStorage.setItem(tokenStorageKey, data.dados.token);
     }
 
-    if (response.ok && data && data.dados && data.dados.refresh_token) {
-        localStorage.setItem(refreshStorageKey, data.dados.refresh_token);
+    // refresh token stored as HttpOnly cookie; server will handle it
+    if (response.ok && data && data.dados && data.dados.token) {
+        localStorage.setItem(tokenStorageKey, data.dados.token);
     }
 
     if (response.status === 401 && !options._retry) {
-        const refreshToken = localStorage.getItem(refreshStorageKey);
-        if (refreshToken) {
-            try {
-                const refreshResult = await request('/token/refresh', {
-                    method: 'POST',
-                    body: JSON.stringify({ refresh_token: refreshToken }),
-                    _retry: true,
-                });
-
-                if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
-                    const newToken = refreshResult.data.dados.token;
-                    localStorage.setItem(tokenStorageKey, newToken);
-                    if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
-                        headers.set('Authorization', `Bearer ${newToken}`);
-                    }
-                    return await request(path, { ...options, _retry: true });
+        try {
+            const refreshResult = await request('/token/refresh', { method: 'POST', _retry: true });
+            if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
+                const newToken = refreshResult.data.dados.token;
+                localStorage.setItem(tokenStorageKey, newToken);
+                if (!headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
+                    headers.set('Authorization', `Bearer ${newToken}`);
                 }
-            } catch (e) {
-                console.warn('Refresh attempt failed', e);
+                return await request(path, { ...options, _retry: true });
             }
+        } catch (e) {
+            console.warn('Refresh attempt failed', e);
         }
     }
 
     if (!response.ok && data && data.codigo === 'token_invalido') {
         localStorage.removeItem(tokenStorageKey);
-        localStorage.removeItem(refreshStorageKey);
     }
 
     const result = { status: response.status, ok: response.ok, data };
