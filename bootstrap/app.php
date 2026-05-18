@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'usuarios',
             'usuarios/*',
+            'token/refresh',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
