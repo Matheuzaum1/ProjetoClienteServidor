@@ -219,19 +219,51 @@ async function testAdmUpdate() {
     const userId = prompt('ID do usuário a atualizar:', '1');
     if (!userId) return;
 
-    const novoNome = prompt('Novo nome:', 'Atualizado');
-    if (!novoNome) return;
-
     try {
         showMessage('admMessage', '⏳ Atualizando usuário...', false);
+        
+        // Primeiro, buscar dados do usuário para mostrar opções
+        const getRes = await apiRequest(`/usuarios/${userId}`, { method: 'GET' });
+        
+        if (!getRes.ok) {
+            showOutput('outputUpdate', { status: getRes.status, error: getRes.data });
+            showMessage('admMessage', 'Erro: Usuário não encontrado', true);
+            return;
+        }
+
+        const usuario = getRes.data?.dados?.usuario || getRes.data?.data || {};
+        
+        // Mostrar opções de campo a atualizar
+        const campo = prompt(
+            `Qual campo quer atualizar para o usuário ID ${userId}?\n\n` +
+            `Dados atuais:\n` +
+            `- nome: ${usuario.nome || '-'}\n` +
+            `- email: ${usuario.email || '-'}\n` +
+            `- usuario: ${usuario.usuario || '-'}\n` +
+            `- biografia: ${usuario.biografia || '-'}\n\n` +
+            `Digite: nome, email, usuario ou biografia`,
+            'nome'
+        );
+
+        if (!campo || !['nome', 'email', 'usuario', 'biografia'].includes(campo.toLowerCase())) {
+            showMessage('admMessage', '❌ Campo inválido', true);
+            return;
+        }
+
+        const novoValor = prompt(`Novo valor para ${campo}:`);
+        if (!novoValor) return;
+
+        const updateData = {};
+        updateData[campo.toLowerCase()] = novoValor;
+
         const res = await apiRequest(`/usuarios/${userId}`, {
             method: 'PATCH',
-            body: JSON.stringify({ nome: novoNome })
+            body: JSON.stringify(updateData)
         });
 
         if (res.ok) {
             showOutput('outputUpdate', { status: res.status, data: res.data });
-            showMessage('admMessage', '✅ Sucesso ao atualizar usuário (Item c)', false);
+            showMessage('admMessage', `✅ Sucesso ao atualizar ${campo} (Item c)`, false);
         } else {
             showOutput('outputUpdate', { status: res.status, error: res.data });
             showMessage('admMessage', 'Erro: ' + (res.data?.mensagem || 'Falha ao atualizar'), true);
