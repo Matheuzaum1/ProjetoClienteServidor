@@ -347,10 +347,23 @@ async function testErrorMessages() {
 }
 
 // Logout
-function logout() {
+async function logout() {
+    // Tentar notificar o servidor do logout
+    if (currentToken && baseUrl) {
+        try {
+            console.log('📡 Notificando servidor do logout...');
+            await apiRequest('/usuarios/logout', { method: 'POST' });
+            console.log('✅ Logout confirmado no servidor');
+        } catch (err) {
+            console.warn('⚠️ Servidor não respondeu ao logout (continuando mesmo assim):', err.message);
+        }
+    }
+
+    // Limpar estado local
     baseUrl = '';
     currentUser = null;
     currentToken = null;
+    console.log('🚪 Logout concluído');
     showScreen('connectionScreen');
 }
 
