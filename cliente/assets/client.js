@@ -203,8 +203,54 @@ async function testAdmRead() {
         const res = await apiRequest('/usuarios', { method: 'GET' });
         
         if (res.ok) {
-            showOutput('outputRead', { status: res.status, data: res.data });
-            showMessage('admMessage', '✅ Sucesso ao listar usuários (Item b)', false);
+            // Extrair lista de usuários
+            let usuarios = [];
+            
+            // Suportar diferentes formatos de resposta
+            if (Array.isArray(res.data)) {
+                usuarios = res.data;
+            } else if (res.data?.dados) {
+                usuarios = Array.isArray(res.data.dados) ? res.data.dados : [res.data.dados];
+            } else if (res.data?.data) {
+                usuarios = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
+            }
+
+            // Formatar como tabela HTML
+            let html = `<table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: #667eea; color: white;">
+                    <tr>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">ID</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Usuário</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Nome</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Email</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Tipo</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            usuarios.forEach(user => {
+                const tipo = user.tipo_usuario === 'adm' || user.admin ? '👨‍💼 ADM' : '👤 Comum';
+                html += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${user.id || '-'}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;"><strong>${user.usuario || '-'}</strong></td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${user.nome || '-'}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${user.email || '-'}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${tipo}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            html += `<div style="margin-top: 15px; padding: 10px; background: #e6f3ff; border-radius: 6px;">
+                <strong>Total:</strong> ${usuarios.length} usuário(s) encontrado(s)
+            </div>`;
+
+            const outputEl = document.getElementById('outputRead');
+            outputEl.innerHTML = html;
+            outputEl.style.display = 'block';
+            outputEl.style.overflow = 'auto';
+
+            showOutput('outputRead', { status: res.status, total: usuarios.length, usuarios: usuarios });
+            showMessage('admMessage', `✅ Sucesso ao listar ${usuarios.length} usuário(s) (Item b)`, false);
         } else {
             showOutput('outputRead', { status: res.status, error: res.data });
             showMessage('admMessage', 'Erro: ' + (res.data?.mensagem || 'Falha ao listar'), true);
