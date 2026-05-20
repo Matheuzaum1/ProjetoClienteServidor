@@ -5,83 +5,62 @@
 **Autenticação:** JWT (JSON Web Token)  
 **Banco:** SQLite (padrão) ou MySQL  
 
----
-
-## 📋 Requisitos Atendidos (EP-1)
-
-### Cliente (1,0 ponto)
-- ✅ **a)** Enviar cadastro de usuário comum para o servidor (0,2)
-- ✅ **b)** Enviar login para o servidor (0,2)
-- ✅ **c)** Pedir dados de cadastro do usuário para o servidor (0,2)
-- ✅ **d)** Enviar atualização dos dados do usuário (0,2)
-- ✅ **e)** Enviar pedido para apagar cadastro (0,1)
-- ✅ **f)** Enviar logout para o servidor (0,1)
-
-### Servidor (1,0 ponto)
-- ✅ **g)** Processar cadastro de usuário comum (0,2)
-- ✅ **h)** Processar login com validação (0,2)
-- ✅ **i)** Enviar dados de cadastro ao cliente (0,2)
-- ✅ **j)** Processar atualização de usuário (0,2)
-- ✅ **k)** Apagar/desativar cadastro (0,1)
-- ✅ **l)** Processar logout (0,1)
-
-### Critérios Obrigatórios
-- ✅ Protocolo de troca de mensagens entregue
-- ✅ Código-fonte versionado no Git
-- ✅ Servidor com porta configurável
-- ✅ Cliente com campo de IP/porta do servidor
-- ✅ Comunicação bidirecional cliente ↔ servidor
-- ✅ Respostas JSON com estrutura padrão
-
----
-
 ## 🚀 Início Rápido
 
 ### Pré-requisitos
 - PHP 8.2+
 - Composer
-- SQLite ou MySQL
+- SQLite (arquivo `database/database.sqlite`) ou MySQL
+
+> Observação: este repositório está no diretório raiz do projeto (não há pasta `servidor`). Execute os comandos a partir da raiz do projeto.
 
 ### Servidor (Laravel 11)
 
-```bash
-# 1. Instalar dependências
-cd servidor
+```powershell
+# 1. Instalar dependências (na raiz do projeto)
+cd "c:\Users\Matheus Henrique\Downloads\ProjetoClienteServidor"
 composer install
 
 # 2. Configurar ambiente
-cp .env.example .env
+copy .env.example .env
 php artisan key:generate
-php artisan jwt:secret
+php artisan jwt:secret --force
 
-# 3. Preparar banco de dados
+# 3. Criar arquivo SQLite (se for usar SQLite) e rodar migrações
+if (-not (Test-Path database\database.sqlite)) { New-Item -ItemType File -Path database\database.sqlite | Out-Null }
 php artisan migrate --seed
 
 # 4. Iniciar servidor (porta configurável)
-php artisan serve --host=0.0.0.0 --port=22222
+php artisan serve --host=0.0.0.0 --port=25000
 ```
 
-**Servidor ouvindo na rede local:** `http://0.0.0.0:22222`
-
-**Acesso a partir de outras máquinas:** use o IP da máquina servidor, por exemplo `http://10.20.8.23:22222`
+**Servidor ouvindo na rede local (exemplo):** `http://0.0.0.0:25000` (acessível via `http://<IP_DA_MAQUINA>:25000` se firewall permitir)
 
 ### Cliente (PHP/HTML/JS)
 
-```bash
-# Abrir no navegador
-php -S localhost:8001 -t cliente/
+```powershell
+# Abrir cliente estático (na raiz do projeto)
+php -S 127.0.0.1:8001 -t cliente
 ```
 
-**Cliente acessível em:** `http://localhost:8001`
+**Cliente acessível em:** `http://127.0.0.1:8001`
 
-Inserir IP/porta do servidor na interface (ex: `http://10.20.8.23:22222`)
-
-Use o botão **Testar conexão** para confirmar que a máquina cliente alcança o servidor antes de executar as operações.
+No cliente, ajuste o campo IP/porta para o servidor (ex: `http://127.0.0.1:25000` ou `http://10.20.8.23:25000`) e use o botão **Testar conexão** antes de operar.
 
 ### Logs rápidos
 
-- **Cliente:** use o painel **Logs do Cliente** na interface para ver o histórico local das requisições e do teste de conexão.
-- **Servidor:** execute `php artisan ep1:logs --lines=80` para ler os últimos registros gravados em `storage/logs/laravel.log`.
+- **Cliente:** painel **Logs do Cliente** na interface (mostra histórico local e testes de conexão). O cliente salva `ep1_api_base_url` e `ep1_jwt_token` no localStorage.
+- **Servidor:** executar `php artisan ep1:logs --lines=80` para ver os últimos registros em `storage/logs/laravel.log`.
+
+### Comandos úteis de teste automático
+
+```powershell
+# Executa a sequência automática de testes (cadastro, login, consulta, update, delete, logout)
+php artisan ep1:test --base-url=http://127.0.0.1:25000
+
+# Ler logs (últimas linhas)
+php artisan ep1:logs --lines=80
+```
 
 ---
 
@@ -216,3 +195,32 @@ DB_PASSWORD=
 
 Para dúvidas sobre o protocolo, consulte `docs/EP1-Protocolo-Mensagens.md`.  
 Para dúvidas sobre a rubrica, consulte `docs/EP1-Checklist-Avaliacao.md`.
+
+---
+
+## 📦 Entrega (zip) e instruções para o avaliador
+
+- O zip disponibilizado na Desktop é uma versão enxuta: **exclui** `vendor/`, `storage/`, `.git`, `node_modules` e o arquivo `database/database.sqlite` gerado. Ele inclui `composer.json`, `composer.lock` e `.env.example`.
+- Antes de rodar no computador do avaliador, execute (na raiz do projeto):
+
+```powershell
+# 1. Instalar dependências
+composer install
+
+# 2. Criar .env a partir do exemplo e gerar chaves
+copy .env.example .env
+php artisan key:generate
+php artisan jwt:secret --force
+
+# 3. (SQLite) criar arquivo e rodar migrações
+if (-not (Test-Path database\database.sqlite)) { New-Item -ItemType File -Path database\database.sqlite | Out-Null }
+php artisan migrate --seed
+
+# 4. Iniciar servidor e cliente
+php artisan serve --host=0.0.0.0 --port=25000
+php -S 127.0.0.1:8001 -t cliente
+```
+
+- Se preferir incluir o arquivo `database/database.sqlite` no zip (para manter dados de teste), avise que eu gero uma versão alternativa do zip contendo o arquivo de banco.
+
+---

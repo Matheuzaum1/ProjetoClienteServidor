@@ -79,6 +79,20 @@ function renderClientLogs() {
         .join('\n');
 }
 
+function promptForBaseUrlOnConnect() {
+    const current = localStorage.getItem(baseUrlStorageKey) || window.__BASE_URL__ || 'http://127.0.0.1:25000';
+    try {
+        const val = window.prompt('Defina a URL base do servidor (ex: http://127.0.0.1:25000):', current);
+        if (val !== null) {
+            saveBaseUrl(val.trim() || current);
+            appendClientLog('info', 'Servidor definido via prompt', { baseUrl: getBaseUrl() });
+            setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
+        }
+    } catch (e) {
+        // ignore
+    }
+}
+
 function getBaseUrl() {
     return (localStorage.getItem(baseUrlStorageKey) || window.__BASE_URL__ || '').replace(/\/$/, '');
 }
@@ -87,6 +101,7 @@ function saveBaseUrl(value) {
     localStorage.setItem(baseUrlStorageKey, value.replace(/\/$/, ''));
     baseUrlInput.value = value.replace(/\/$/, '');
 }
+ 
 
 function buildRequestCandidates(path) {
     const base = getBaseUrl();
@@ -435,6 +450,8 @@ clearClientLogsButton.addEventListener('click', () => {
     renderClientLogs();
 });
 
+// Ask user for base URL on connect (tests page)
+promptForBaseUrlOnConnect();
 baseUrlInput.value = getBaseUrl();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });
