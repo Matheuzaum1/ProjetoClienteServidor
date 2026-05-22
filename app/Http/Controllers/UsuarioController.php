@@ -27,31 +27,35 @@ class UsuarioController extends Controller
 
     public function index(): JsonResponse
     {
-        if (!$this->isUserAdm()) {
-            Log::warning('Tentativa de listagem de usuários por usuário comum', [
-                'usuario_id' => Auth::id(),
-                'ip' => request()->ip(),
-            ]);
+        $isAdmin = $this->isUserAdm();
 
-            $response = ApiResponse::error('ACESSO_NEGADO', 'Apenas administradores podem listar usuários', [], 403);
+        $query = User::query();
 
-            return response()->json($response['body'], $response['statusCode']);
+        if (!$isAdmin) {
+            $query->where('ativo', true);
         }
 
-        $usuarios = User::query()->where('ativo', true)->get()->map(function ($user) {
-            return [
+        $usuarios = $query->get()->map(function ($user) use ($isAdmin) {
+            $data = [
                 'id' => (string) $user->id,
                 'nome_completo' => $user->nome,
                 'usuario' => $user->usuario,
-                'email' => $user->email,
                 'biografia' => $user->biografia,
                 'foto_url' => $user->foto_url,
-                'tipo_usuario' => $user->tipo_usuario,
             ];
+
+            if ($isAdmin) {
+                $data['email'] = $user->email;
+                $data['ativo'] = $user->ativo;
+                $data['tipo_usuario'] = $user->tipo_usuario;
+            }
+
+            return $data;
         });
 
         Log::info('Listagem de usuários realizada', [
-            'usuario_adm_id' => Auth::id(),
+            'usuario_id' => Auth::id(),
+            'is_admin' => $isAdmin,
             'total_usuarios' => $usuarios->count(),
             'ip' => request()->ip(),
         ]);

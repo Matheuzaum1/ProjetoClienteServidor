@@ -1,6 +1,7 @@
 const friendlyOutput = document.getElementById('friendlyOutput');
 const rawOutput = document.getElementById('rawOutput');
-const baseUrlInput = document.getElementById('baseUrl');
+const serverIp = document.getElementById('serverIp');
+const serverPort = document.getElementById('serverPort');
 const saveBaseUrlButton = document.getElementById('saveBaseUrl');
 const testConnectionButton = document.getElementById('testConnection');
 const clearOutputButton = document.getElementById('clearOutput');
@@ -79,29 +80,20 @@ function renderClientLogs() {
         .join('\n');
 }
 
-function promptForBaseUrlOnConnect() {
-    const current = localStorage.getItem(baseUrlStorageKey) || window.__BASE_URL__ || 'http://127.0.0.1:25000';
-    try {
-        const val = window.prompt('Defina a URL base do servidor (ex: http://127.0.0.1:25000):', current);
-        if (val !== null) {
-            saveBaseUrl(val.trim() || current);
-            appendClientLog('info', 'Servidor definido via prompt', { baseUrl: getBaseUrl() });
-            setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
-        }
-    } catch (e) {
-        // ignore
-    }
-}
-
 function getBaseUrl() {
     return (localStorage.getItem(baseUrlStorageKey) || window.__BASE_URL__ || '').replace(/\/$/, '');
 }
 
 function saveBaseUrl(value) {
     localStorage.setItem(baseUrlStorageKey, value.replace(/\/$/, ''));
-    baseUrlInput.value = value.replace(/\/$/, '');
+    if (serverIp && serverPort) {
+        const match = value.match(/https?:\/\/([^:]+)(?::(\d+))?/);
+        if (match) {
+            serverIp.value = match[1];
+            if (match[2]) serverPort.value = match[2];
+        }
+    }
 }
- 
 
 function buildRequestCandidates(path) {
     const base = getBaseUrl();
@@ -426,14 +418,20 @@ document.getElementById('deleteOtherForm').addEventListener('submit', async (eve
 });
 
 saveBaseUrlButton.addEventListener('click', () => {
-    saveBaseUrl(baseUrlInput.value.trim());
+    const ip = serverIp.value.trim() || '127.0.0.1';
+    const port = serverPort.value.trim() || '25000';
+    const newUrl = `http://${ip}:${port}`;
+    saveBaseUrl(newUrl);
     setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
     appendClientLog('info', 'Servidor configurado no cliente', { baseUrl: getBaseUrl() });
 });
 
 testConnectionButton.addEventListener('click', async () => {
     try {
-        saveBaseUrl(baseUrlInput.value.trim());
+        const ip = serverIp.value.trim() || '127.0.0.1';
+        const port = serverPort.value.trim() || '25000';
+        const newUrl = `http://${ip}:${port}`;
+        saveBaseUrl(newUrl);
         const result = await testServerConnection();
         setOutput(result);
     } catch (error) {
@@ -450,8 +448,6 @@ clearClientLogsButton.addEventListener('click', () => {
     renderClientLogs();
 });
 
-// Ask user for base URL on connect (tests page)
-promptForBaseUrlOnConnect();
 baseUrlInput.value = getBaseUrl();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });

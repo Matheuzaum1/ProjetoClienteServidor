@@ -16,6 +16,9 @@ const editProfileBtn = document.getElementById('editProfileBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const editProfileForm = document.getElementById('editProfileForm');
 const cancelEdit = document.getElementById('cancelEdit');
+const serverIp = document.getElementById('serverIp');
+const serverPort = document.getElementById('serverPort');
+const saveServerBtn = document.getElementById('saveServerBtn');
 
 function getBaseUrl() {
     return (localStorage.getItem(baseUrlStorageKey) || 'http://127.0.0.1:25000').replace(/\/$/, '');
@@ -23,6 +26,33 @@ function getBaseUrl() {
 
 function saveBaseUrl(value) {
     localStorage.setItem(baseUrlStorageKey, value.replace(/\/$/, ''));
+}
+
+// Inicializa os campos de IP e Porta com base na URL salva
+document.addEventListener('DOMContentLoaded', () => {
+    const savedUrl = getBaseUrl();
+    const match = savedUrl.match(/https?:\/\/([^:]+)(?::(\d+))?/);
+    if (match) {
+        if (serverIp) serverIp.value = match[1];
+        if (serverPort && match[2]) serverPort.value = match[2];
+    }
+});
+
+// Listener para o botão de salvar servidor
+if (saveServerBtn) {
+    saveServerBtn.addEventListener('click', () => {
+        const ip = serverIp.value.trim() || '127.0.0.1';
+        const port = serverPort.value.trim() || '25000';
+        const protocol = ip === 'localhost' || ip === '127.0.0.1' ? 'http' : 'http'; // Assumindo HTTP para testes
+        const newUrl = `${protocol}://${ip}:${port}`;
+        saveBaseUrl(newUrl);
+        showMessage('authMessage', `Servidor atualizado para: ${newUrl}`, 'success');
+        
+        // Atualizar links para a tela de testes
+        document.querySelectorAll('a.btn-tests').forEach(el => {
+            el.href = `testes/?baseUrl=${encodeURIComponent(newUrl)}`;
+        });
+    });
 }
 
 function buildRequestCandidates(path) {
@@ -214,89 +244,6 @@ function showProfile(user) {
     authRegisterForm.parentElement.style.display = 'none';
     profileModal.classList.add('show');
     modalOverlay.style.display = 'flex';
-
-    // Render test buttons based on logged user
-    try {
-        renderProfileTestButtons(user);
-    } catch (e) {
-        // non-critical
-    }
-}
-
-function renderProfileTestButtons(user) {
-    const container = document.getElementById('profileTestActions');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const openTestsBtn = document.createElement('button');
-    openTestsBtn.textContent = '🔧 Abrir Painel de Testes';
-    openTestsBtn.className = 'btn-tests-small';
-    openTestsBtn.addEventListener('click', () => {
-        window.location.href = 'testes/';
-    });
-    container.appendChild(openTestsBtn);
-
-    // If user is admin, show admin actions
-    if (user && user.tipo_usuario === 'adm') {
-        const listBtn = document.createElement('button');
-        listBtn.textContent = '📋 Listar Usuários';
-        listBtn.className = 'btn-list-users';
-        listBtn.addEventListener('click', async () => {
-            try {
-                const res = await request('/usuarios', { method: 'GET' });
-                if (res && res.ok) {
-                    alert(JSON.stringify(res.data, null, 2));
-                } else {
-                    showMessage(res && res.data && res.data.mensagem ? res.data.mensagem : 'Erro ao listar', true);
-                }
-            } catch (err) {
-                showMessage(err.message, true);
-            }
-        });
-        container.appendChild(listBtn);
-    } else {
-        // common user: provide buttons to attempt forbidden actions for testing
-        const tryEditBtn = document.createElement('button');
-        tryEditBtn.textContent = '✏️ Tentar editar outro usuário';
-        tryEditBtn.className = 'btn-try-edit';
-        tryEditBtn.addEventListener('click', async () => {
-            const id = window.prompt('ID do usuário que você quer tentar editar (ex: 1):', '1');
-            if (!id) return;
-            const nome = window.prompt('Novo nome (teste):', 'TentativaMaliciosa');
-            if (nome === null) return;
-            try {
-                const res = await request(`/usuarios/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ nome }) });
-                if (res && res.ok) {
-                    showMessage('Alteração aplicada (unexpected) — verifique servidor', false);
-                } else {
-                    showMessage(res && res.data && res.data.mensagem ? res.data.mensagem : 'Ação negada pelo servidor', true);
-                }
-            } catch (err) {
-                showMessage(err.message, true);
-            }
-        });
-        container.appendChild(tryEditBtn);
-
-        const tryDeleteBtn = document.createElement('button');
-        tryDeleteBtn.textContent = '🗑️ Tentar apagar outro usuário';
-        tryDeleteBtn.className = 'btn-try-delete';
-        tryDeleteBtn.addEventListener('click', async () => {
-            const id = window.prompt('ID do usuário que você quer tentar apagar (ex: 1):', '1');
-            if (!id) return;
-            if (!confirm(`Confirma tentativa de deletar o usuário ${id}?`)) return;
-            try {
-                const res = await request(`/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' });
-                if (res && res.ok) {
-                    showMessage('Usuário removido (unexpected) — verifique servidor', false);
-                } else {
-                    showMessage(res && res.data && res.data.mensagem ? res.data.mensagem : 'Ação negada pelo servidor', true);
-                }
-            } catch (err) {
-                showMessage(err.message, true);
-            }
-        });
-        container.appendChild(tryDeleteBtn);
-    }
 }
 
 function hideProfile() {
@@ -319,19 +266,6 @@ function checkLogin() {
             localStorage.removeItem(tokenStorageKey);
             localStorage.removeItem(userStorageKey);
         }
-    }
-}
-
-function promptForBaseUrlOnConnect() {
-    const current = localStorage.getItem(baseUrlStorageKey) || 'http://127.0.0.1:25000';
-    try {
-        const val = window.prompt('Defina a URL base do servidor (ex: http://127.0.0.1:25000):', current);
-        if (val !== null) {
-            saveBaseUrl(val.trim() || current);
-            appendClientLog && typeof appendClientLog === 'function' && appendClientLog('info', 'Servidor definido via prompt', { baseUrl: getBaseUrl() });
-        }
-    } catch (e) {
-        // ignore if prompt not available
     }
 }
 
@@ -495,6 +429,5 @@ modalOverlay.addEventListener('click', () => {
 });
 
 // Initialize
-promptForBaseUrlOnConnect();
 saveBaseUrl(getBaseUrl());
 checkLogin();

@@ -22,8 +22,9 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                 </svg>
                 <span>Instagram</span>
             </div>
-            <div class="server-config">
-                <input id="baseUrl" value="<?php echo htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8'); ?>" placeholder="http://127.0.0.1:25000" class="server-input">
+            <div class="server-config" style="display: flex; gap: 5px; align-items: center;">
+                <input id="serverIp" type="text" placeholder="IP (ex: 127.0.0.1)" class="server-input" style="width: 140px;">
+                <input id="serverPort" type="text" placeholder="Porta (ex: 25000)" class="server-input" style="width: 80px;">
                 <button id="saveBaseUrl" type="button" class="btn-icon" title="Salvar servidor">💾</button>
                 <button id="testConnection" type="button" class="btn-icon" title="Testar conexão">🔗</button>
             </div>
