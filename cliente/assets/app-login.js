@@ -9,6 +9,7 @@ const authMessage = document.getElementById('authMessage');
 const toggleBtns = document.querySelectorAll('.toggle-btn');
 const switchToRegister = document.getElementById('switchToRegister');
 const switchToLogin = document.getElementById('switchToLogin');
+const loginBox = document.querySelector('.login-box');
 const profileModal = document.getElementById('profileModal');
 const modalOverlay = document.getElementById('modalOverlay');
 const closeProfile = document.getElementById('closeProfile');
@@ -16,9 +17,14 @@ const editProfileBtn = document.getElementById('editProfileBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const editProfileForm = document.getElementById('editProfileForm');
 const cancelEdit = document.getElementById('cancelEdit');
+const ep2Dashboard = document.getElementById('ep2Dashboard');
+const loggedUserLabel = document.getElementById('loggedUserLabel');
+const ep2TestFrame = document.getElementById('ep2TestFrame');
 const serverIp = document.getElementById('serverIp');
 const serverPort = document.getElementById('serverPort');
 const saveServerBtn = document.getElementById('saveServerBtn');
+const openListUsersBtn = document.getElementById('openListUsersBtn');
+const openAdmPanelBtn = document.getElementById('openAdmPanelBtn');
 
 function getBaseUrl() {
     return (localStorage.getItem(baseUrlStorageKey) || 'http://127.0.0.1:25000').replace(/\/$/, '');
@@ -47,12 +53,21 @@ if (saveServerBtn) {
         const newUrl = `${protocol}://${ip}:${port}`;
         saveBaseUrl(newUrl);
         showMessage('authMessage', `Servidor atualizado para: ${newUrl}`, 'success');
-        
+        if (ep2TestFrame) {
+            ep2TestFrame.src = `testes/?baseUrl=${encodeURIComponent(newUrl)}`;
+        }
         // Atualizar links para a tela de testes
         document.querySelectorAll('a.btn-tests').forEach(el => {
             el.href = `testes/?baseUrl=${encodeURIComponent(newUrl)}`;
         });
     });
+}
+
+function openTestFrameWithHash(hash) {
+    const currentBaseUrl = getBaseUrl();
+    if (ep2TestFrame) {
+        ep2TestFrame.src = `testes/?baseUrl=${encodeURIComponent(currentBaseUrl)}${hash || ''}`;
+    }
 }
 
 function buildRequestCandidates(path) {
@@ -190,6 +205,18 @@ async function request(path, options = {}) {
     return { status: response.status, ok: response.ok, data };
 }
 
+if (openListUsersBtn) {
+    openListUsersBtn.addEventListener('click', () => {
+        openTestFrameWithHash('#listUsersForm');
+    });
+}
+
+if (openAdmPanelBtn) {
+    openAdmPanelBtn.addEventListener('click', () => {
+        openTestFrameWithHash('');
+    });
+}
+
 function showMessage(text, isError = false) {
     authMessage.textContent = text;
     authMessage.className = `auth-message ${isError ? 'error' : 'success'}`;
@@ -222,36 +249,35 @@ function formToJson(form) {
     return Object.fromEntries(new FormData(form).entries());
 }
 
-function showProfile(user) {
-    document.getElementById('profileName').textContent = user.nome || user.usuario;
-    document.getElementById('profileUser').textContent = `@${user.usuario}`;
-    document.getElementById('profileEmail').textContent = user.email;
-    document.getElementById('profileBio').textContent = user.biografia || 'Sem biografia';
-    document.getElementById('editUserId').value = user.id;
-
-    if (user.foto_url) {
-        document.getElementById('profilePhoto').src = user.foto_url;
+function showDashboard(user) {
+    if (loggedUserLabel) {
+        loggedUserLabel.textContent = `${user.nome || user.usuario} (@${user.usuario}) - ${user.tipo_usuario || 'comum'}`;
     }
 
-    // Populate edit form
-    document.querySelector('#editProfileForm input[name="nome"]').value = user.nome || '';
-    document.querySelector('#editProfileForm input[name="usuario"]').value = user.usuario || '';
-    document.querySelector('#editProfileForm input[name="email"]').value = user.email || '';
-    document.querySelector('#editProfileForm textarea[name="biografia"]').value = user.biografia || '';
-    document.querySelector('#editProfileForm input[name="foto"]').value = user.foto_url || '';
+    const currentBaseUrl = getBaseUrl();
+    if (ep2TestFrame) {
+        ep2TestFrame.src = `testes/?baseUrl=${encodeURIComponent(currentBaseUrl)}`;
+    }
 
     authLoginForm.parentElement.style.display = 'none';
     authRegisterForm.parentElement.style.display = 'none';
-    profileModal.classList.add('show');
-    modalOverlay.style.display = 'flex';
+    if (loginBox) {
+        loginBox.style.display = 'none';
+    }
+    if (ep2Dashboard) {
+        ep2Dashboard.style.display = 'block';
+    }
 }
 
-function hideProfile() {
-    profileModal.classList.remove('show');
-    modalOverlay.style.display = 'none';
+function hideDashboard() {
+    if (ep2Dashboard) {
+        ep2Dashboard.style.display = 'none';
+    }
+    if (loginBox) {
+        loginBox.style.display = 'flex';
+    }
     authLoginForm.parentElement.style.display = 'block';
     authRegisterForm.parentElement.style.display = 'block';
-    editProfileForm.style.display = 'none';
 }
 
 function checkLogin() {
@@ -261,7 +287,7 @@ function checkLogin() {
     if (token && userData) {
         try {
             const user = JSON.parse(userData);
-            showProfile(user);
+            showDashboard(user);
         } catch {
             localStorage.removeItem(tokenStorageKey);
             localStorage.removeItem(userStorageKey);
@@ -303,7 +329,7 @@ authLoginForm.addEventListener('submit', async (event) => {
             }
             showMessage('Login realizado com sucesso!', false);
             setTimeout(() => {
-                showProfile(result.data.dados.usuario);
+                showDashboard(result.data.dados.usuario);
             }, 500);
         } else {
             showMessage(result.data.mensagem || 'Erro ao fazer login', true);
@@ -357,15 +383,15 @@ editProfileForm.addEventListener('submit', async (event) => {
         });
 
         if (result.ok) {
-            showMessage('Perfil atualizado com sucesso!', false);
+            showMessage('Dados atualizados com sucesso!', false);
             const userData = JSON.parse(localStorage.getItem(userStorageKey) || '{}');
             Object.assign(userData, body);
             localStorage.setItem(userStorageKey, JSON.stringify(userData));
             setTimeout(() => {
-                showProfile(userData);
+                showDashboard(userData);
             }, 500);
         } else {
-            showMessage(result.data.mensagem || 'Erro ao atualizar perfil', true);
+            showMessage(result.data.mensagem || 'Erro ao atualizar dados', true);
         }
     } catch (error) {
         showMessage(error.message, true);
@@ -381,7 +407,7 @@ logoutBtn.addEventListener('click', async () => {
         localStorage.removeItem(userStorageKey);
         showMessage('Logout realizado com sucesso!', false);
         setTimeout(() => {
-            hideProfile();
+            hideDashboard();
             switchForm('login');
         }, 500);
         return;
@@ -404,7 +430,7 @@ logoutBtn.addEventListener('click', async () => {
         }
 
         setTimeout(() => {
-            hideProfile();
+            hideDashboard();
             switchForm('login');
         }, 500);
     } catch (error) {
@@ -414,18 +440,10 @@ logoutBtn.addEventListener('click', async () => {
         localStorage.removeItem(userStorageKey);
         showMessage('Logout concluído (sem conexão com o servidor).', false);
         setTimeout(() => {
-            hideProfile();
+            hideDashboard();
             switchForm('login');
         }, 500);
     }
-});
-
-closeProfile.addEventListener('click', () => {
-    hideProfile();
-});
-
-modalOverlay.addEventListener('click', () => {
-    hideProfile();
 });
 
 // Initialize

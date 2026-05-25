@@ -88,40 +88,24 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
         </div>
     </div>
 
-    <!-- User Profile (shown after login) -->
-    <div id="profileModal" class="profile-modal" style="display: none;">
-        <div class="profile-content">
-            <button class="btn-close" id="closeProfile">✕</button>
-            
-            <div class="profile-header">
-                <img id="profilePhoto" src="https://via.placeholder.com/100" alt="Foto">
-                <h2 id="profileName">Usuario</h2>
-                <p id="profileUser">@usuario</p>
+    <!-- Painel pós-login com os testes da EP-2 -->
+    <div id="ep2Dashboard" class="ep2-dashboard" style="display: none;">
+        <div class="ep2-dashboard-header">
+            <div>
+                <h2>EP-2 - Painel de testes</h2>
+                <p id="loggedUserLabel">Usuário autenticado</p>
             </div>
-
-            <div class="profile-info">
-                <p><strong>E-mail:</strong> <span id="profileEmail">email@example.com</span></p>
-                <p><strong>Biografia:</strong> <span id="profileBio">Sem biografia</span></p>
-            </div>
-
             <div class="profile-actions">
-                <button id="editProfileBtn" class="btn-edit">✏️ Editar Perfil</button>
                 <button id="logoutBtn" class="btn-logout">🚪 Sair</button>
             </div>
+        </div>
 
-            <!-- Edit Profile Form -->
-            <form id="editProfileForm" class="edit-form" style="display: none;">
-                <h3>Editar Perfil</h3>
-                <input type="hidden" name="id" id="editUserId">
-                <input type="text" name="nome" placeholder="Nome completo" required>
-                <input type="text" name="usuario" placeholder="Nome de usuário" required>
-                <input type="email" name="email" placeholder="E-mail" required>
-                <textarea name="biografia" placeholder="Biografia (opcional)" rows="2"></textarea>
-                <input type="url" name="foto" placeholder="URL da foto (opcional)">
-                <input type="password" name="senha" placeholder="Nova senha (opcional)">
-                <button type="submit" class="btn-submit">Salvar Alterações</button>
-                <button type="button" class="btn-cancel" id="cancelEdit">Cancelar</button>
-            </form>
+        <div class="ep2-dashboard-body">
+            <iframe
+                id="ep2TestFrame"
+                title="Painel de testes EP-2"
+                src="testes/?baseUrl=http://127.0.0.1:25000"
+            ></iframe>
         </div>
     </div>
 

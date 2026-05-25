@@ -131,12 +131,12 @@
         "tags": [
           "usuarios"
         ],
-        "summary": "Listar usuários",
-        "description": "Retorna a lista de usuários cadastrados.",
+        "summary": "Listar usuários por perfil",
+        "description": "Retorna a lista de usuários cadastrados. Para usuário ADM, a resposta inclui todos os campos disponíveis. Para usuário comum, a resposta contém apenas os dados públicos permitidos.",
         "operationId": "listarUsuarios",
         "responses": {
           "200": {
-            "description": "Usuários listados com sucesso",
+            "description": "Usuários listados com sucesso. A estrutura dos itens varia conforme o tipo do usuário autenticado.",
             "content": {
               "application/json": {
                 "schema": {
@@ -655,8 +655,42 @@
               {
                 "id": "1",
                 "nome": "João",
+                "usuario": "joao",
+                "biografia": "Desenvolvedor e entusiasta de astronomia.",
+                "foto_url": "https://api.projeto.com/fotos/joao.jpg"
+              },
+              {
+                "id": "2",
+                "nome": "Maria",
+                "usuario": "maria",
+                "biografia": null,
+                "foto_url": null
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PadraoResposta"
+          }
+        ]
+      },
+      "ListagemResponseAdm": {
+        "example": {
+          "status": "sucesso",
+          "codigo": "LISTAGEM_SUCESSO",
+          "mensagem": "Usuários listados com sucesso",
+          "dados": {
+            "usuarios": [
+              {
+                "id": "1",
+                "nome": "João",
                 "email": "j@j.com",
-                "usuario": "joao"
+                "usuario": "joao",
+                "biografia": "Desenvolvedor e entusiasta de astronomia.",
+                "foto_url": "https://api.projeto.com/fotos/joao.jpg",
+                "tipo_usuario": "adm",
+                "ativo": true
               }
             ]
           }

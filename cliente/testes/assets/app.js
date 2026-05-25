@@ -8,6 +8,9 @@ const clearOutputButton = document.getElementById('clearOutput');
 const clientLogsOutput = document.getElementById('clientLogs');
 const refreshClientLogsButton = document.getElementById('refreshClientLogs');
 const clearClientLogsButton = document.getElementById('clearClientLogs');
+const listUsersOutput = document.getElementById('listUsersOutput');
+const quickListUsersBtn = document.getElementById('quickListUsersBtn');
+const quickListUsersOutput = document.getElementById('quickListUsersOutput');
 
 const tokenStorageKey = 'ep1_jwt_token';
 const baseUrlStorageKey = 'ep1_api_base_url';
@@ -381,15 +384,58 @@ document.getElementById('logoutForm').addEventListener('submit', async (event) =
 });
 
 // ADM Operations
+function formatUsersList(result) {
+    if (!result.ok || !result.data || !result.data.dados || !Array.isArray(result.data.dados.usuarios)) {
+        return 'A listagem não retornou usuários.';
+    }
+
+    const lines = result.data.dados.usuarios.map((u) => {
+        const base = `${u.id} | @${u.usuario} | ${u.nome_completo || u.nome || '-'}`;
+        const extra = u.email ? ` | ${u.email}` : '';
+        return `${base}${extra}`;
+    });
+
+    return lines.length ? lines.join('\n') : 'Nenhum usuário encontrado.';
+}
+
 document.getElementById('listUsersForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
         const result = await request('/usuarios', { method: 'GET' });
         setOutput(result);
+
+        if (listUsersOutput) {
+            listUsersOutput.textContent = formatUsersList(result);
+        }
     } catch (error) {
         setOutput({ erro: error.message });
+        if (listUsersOutput) {
+            listUsersOutput.textContent = `Erro ao listar usuários: ${error.message}`;
+        }
     }
 });
+
+if (quickListUsersBtn) {
+    quickListUsersBtn.addEventListener('click', async () => {
+        try {
+            const result = await request('/usuarios', { method: 'GET' });
+            setOutput(result);
+
+            if (quickListUsersOutput) {
+                quickListUsersOutput.textContent = formatUsersList(result);
+            }
+
+            if (listUsersOutput) {
+                listUsersOutput.textContent = formatUsersList(result);
+            }
+        } catch (error) {
+            setOutput({ erro: error.message });
+            if (quickListUsersOutput) {
+                quickListUsersOutput.textContent = `Erro ao listar usuários: ${error.message}`;
+            }
+        }
+    });
+}
 
 document.getElementById('editOtherForm').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -448,7 +494,6 @@ clearClientLogsButton.addEventListener('click', () => {
     renderClientLogs();
 });
 
-baseUrlInput.value = getBaseUrl();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente pronto. Configure o servidor e execute uma operacao.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });
 renderClientLogs();
@@ -496,7 +541,6 @@ if (saveBaseUrlSettingsButton) {
     saveBaseUrlSettingsButton.addEventListener('click', () => {
         if (baseUrlSettingsInput) {
             saveBaseUrl(baseUrlSettingsInput.value.trim());
-            baseUrlInput.value = getBaseUrl();
             setOutput({ ok: true, data: { status: 'sucesso', mensagem: `Servidor definido como ${getBaseUrl()}` } });
             appendClientLog('info', 'Servidor reconfigurado nas configurações', { baseUrl: getBaseUrl() });
         }

@@ -65,6 +65,23 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
         <main class="feed">
             <!-- Feed Tab -->
             <section class="tab-content active" data-tab="feed">
+                <article class="post-card" style="margin-bottom: 16px; border: 2px solid #dbeafe;">
+                    <div class="post-header">
+                        <div class="avatar">🚀</div>
+                        <div class="post-info">
+                            <h3>Painel rápido EP-2 (mais simples)</h3>
+                            <small>Use este botão para listar usuários sem trocar de aba</small>
+                        </div>
+                    </div>
+                    <div class="post-form">
+                        <button id="quickListUsersBtn" type="button" class="btn-primary">Listar usuários agora</button>
+                    </div>
+                    <div class="response-item" style="margin: 12px;">
+                        <div class="response-label">Usuários retornados pelo servidor</div>
+                        <pre id="quickListUsersOutput">Clique em "Listar usuários agora" para ver os usuários do banco.</pre>
+                    </div>
+                </article>
+
                 <div class="feed-grid">
                     <!-- Post: Cadastro -->
                     <article class="post-card">
@@ -185,6 +202,10 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                         <form id="listUsersForm" class="post-form">
                             <button type="submit" class="btn-primary">Buscar</button>
                         </form>
+                        <div id="listUsersResult" class="response-item" style="margin-top: 12px;">
+                            <div class="response-label">Resultado da listagem</div>
+                            <pre id="listUsersOutput">Clique em Buscar para listar usuários.</pre>
+                        </div>
                     </article>
 
                     <!-- Post: Editar Outro Usuário -->
