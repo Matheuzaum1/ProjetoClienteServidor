@@ -6,3 +6,12 @@
 /storage/framework/sessions/*
 /storage/framework/testing/*
 /storage/logs/*
+
+# Ignorar banco SQLite gerado localmente
+/database/database.sqlite
+
+# Ignorar views compiladas geradas pelo framework
+/storage/framework/views/*
+
+# Ignorar arquivo zip temporário
+ProjetoClienteServidor.zip
