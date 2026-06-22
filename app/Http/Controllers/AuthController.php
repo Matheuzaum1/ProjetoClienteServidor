@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use App\Models\RefreshToken;
+use App\Models\Sessao;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -51,8 +53,24 @@ class AuthController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
+        // Register session for logged-in user tracking
+        Sessao::create([
+            'user_id' => $user->id,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'logged_in_at' => Carbon::now(),
+            'last_activity_at' => Carbon::now(),
+            'active' => true,
+        ]);
+
         // Set refresh token as HttpOnly cookie (for client compatibility)
         $cookie = cookie('refresh_token', $plainRefresh, 60 * 24 * 30, '/', null, false, true, false, 'None');
+
+        Log::info('Login concluído com sucesso', [
+            'usuario_id' => $user->id,
+            'usuario' => $user->usuario,
+            'ip' => $request->ip(),
+        ]);
 
         $response = ApiResponse::success('LOGIN_SUCESSO', 'Login realizado com sucesso', [
             'token' => $token,
@@ -66,14 +84,6 @@ class AuthController extends Controller
         ]);
 
         return response()->json($response['body'], $response['statusCode'])->withCookie($cookie);
-
-        Log::info('Login concluído com sucesso', [
-            'usuario_id' => $user->id,
-            'usuario' => $user->usuario,
-            'ip' => $request->ip(),
-        ]);
-
-        return response()->json($response['body'], $response['statusCode']);
     }
 
     public function logout(Request $request): JsonResponse
@@ -106,11 +116,22 @@ class AuthController extends Controller
                 Log::warning('Falha ao revogar refresh token no logout', ['error' => $e->getMessage()]);
             }
         }
+        // Mark session as ended
+        $userId = optional(auth('api')->user())->id;
+        if ($userId) {
+            Sessao::where('user_id', $userId)
+                ->where('active', true)
+                ->update([
+                    'active' => false,
+                    'logged_out_at' => Carbon::now(),
+                ]);
+        }
+
         // Remove refresh cookie from client
         $forget = cookie()->forget('refresh_token');
 
         Log::info('Logout executado', [
-            'usuario_id' => optional(auth('api')->user())->id,
+            'usuario_id' => $userId,
             'ip' => $request->ip(),
         ]);
         $response = ApiResponse::success('LOGOUT_SUCESSO', 'Logout realizado com sucesso');
@@ -174,5 +195,35 @@ class AuthController extends Controller
         ]);
 
         return response()->json($response['body'], $response['statusCode'])->withCookie($cookie);
+    }
+
+    public function logados(): JsonResponse
+    {
+        $sessoes = Sessao::where('active', true)
+            ->with('user')
+            ->orderBy('last_activity_at', 'desc')
+            ->get()
+            ->map(function ($sessao) {
+                return [
+                    'id' => (string) $sessao->user_id,
+                    'usuario' => $sessao->user->usuario ?? 'desconhecido',
+                    'nome' => $sessao->user->nome ?? 'Desconhecido',
+                    'ip' => $sessao->ip,
+                    'logged_in_at' => $sessao->logged_in_at ? $sessao->logged_in_at->toIso8601String() : null,
+                    'last_activity_at' => $sessao->last_activity_at ? $sessao->last_activity_at->toIso8601String() : null,
+                ];
+            });
+
+        Log::info('Listagem de usuários logados', [
+            'requisitante_id' => Auth::id(),
+            'total_logados' => $sessoes->count(),
+            'ip' => request()->ip(),
+        ]);
+
+        $response = ApiResponse::success('LISTAGEM_LOGADOS_SUCESSO', 'Usuários logados listados com sucesso', [
+            'usuarios' => $sessoes,
+        ]);
+
+        return response()->json($response['body'], $response['statusCode']);
     }
 }

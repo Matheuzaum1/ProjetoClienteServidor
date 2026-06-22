@@ -6,13 +6,18 @@ final class ApiResponse
 {
     public static function success(string $codigo, string $mensagem, array $dados = [], int $statusCode = 200): array
     {
+        $body = [
+            'status' => 'sucesso',
+            'codigo' => $codigo,
+            'mensagem' => $mensagem,
+        ];
+
+        if (!empty($dados)) {
+            $body['dados'] = $dados;
+        }
+
         return [
-            'body' => [
-                'status' => 'sucesso',
-                'codigo' => $codigo,
-                'mensagem' => $mensagem,
-                'dados' => $dados,
-            ],
+            'body' => $body,
             'statusCode' => $statusCode,
         ];
     }

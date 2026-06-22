@@ -1,6 +1,6 @@
-# Projeto Cliente/Servidor - Instagram (EP-2)
+# Projeto Cliente/Servidor - Instagram (EP-3)
 
-API REST em Laravel com autenticação JWT e cliente web para testes das regras de autorização da EP-2.
+API REST em Laravel com autenticação JWT e cliente web para testes completos da EP-3 (posts, curtidas, usuários logados).
 
 ## Pré-requisitos
 - PHP 8.2+
@@ -48,20 +48,32 @@ php -S 127.0.0.1:8001 -t cliente
 - Comum: `user1` / `senha123`
 - Comum: `user2` / `senha123`
 
-## Como testar "Listar usuários" (mais simples)
+## Como testar
 1. Abra `http://127.0.0.1:8001/testes`
-2. Faça login com usuário admin.
-3. Clique no botão **"Listar usuários agora"** no topo da tela.
-4. O resultado aparece no bloco **"Usuários retornados pelo servidor"**.
+2. Faça login com algum usuário.
+3. Use os cards para criar, listar, consultar, atualizar e deletar posts.
+4. Use os cards de Curtir/Descurtir para interagir com posts.
+5. Na aba "Explorar", veja a lista de usuários e usuários logados.
 
 ## Endpoints principais
-- `POST /usuarios`
-- `POST /usuarios/login`
-- `POST /usuarios/logout`
-- `GET /usuarios`
-- `GET /usuarios/{id}`
-- `PATCH /usuarios/{id}`
-- `DELETE /usuarios/{id}`
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/usuarios` | Cadastro |
+| `POST` | `/usuarios/login` | Login |
+| `POST` | `/usuarios/logout` | Logout |
+| `GET` | `/usuarios` | Listar usuários |
+| `GET` | `/usuarios/logados` | Usuários logados |
+| `GET` | `/usuarios/{id}` | Mostrar usuário |
+| `PATCH` | `/usuarios/{id}` | Atualizar usuário |
+| `DELETE` | `/usuarios/{id}` | Excluir usuário |
+| `GET` | `/usuarios/{id}/posts` | Listar posts |
+| `POST` | `/usuarios/{id}/posts` | Criar post |
+| `GET` | `/usuarios/{id}/posts/{id}` | Mostrar post |
+| `PATCH` | `/usuarios/{id}/posts/{id}` | Atualizar post |
+| `DELETE` | `/usuarios/{id}/posts/{id}` | Excluir post |
+| `POST` | `/usuarios/{id}/posts/{id}` | Curtir post |
+| `DELETE` | `/usuarios/{id}/posts/{id}/curtir` | Descurtir post |
 
 ## Coleta de logs (cliente + servidor)
 

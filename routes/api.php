@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,4 +16,13 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::patch('/usuarios/{id}', [UsuarioController::class, 'update']);
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy']);
+
+    Route::get('/usuarios/{idUsuario}/posts', [PostController::class, 'index']);
+    Route::post('/usuarios/{idUsuario}/posts', [PostController::class, 'store']);
+    Route::get('/usuarios/{idUsuario}/posts/{idPost}', [PostController::class, 'show']);
+    Route::post('/usuarios/{idUsuario}/posts/{idPost}', [PostController::class, 'curtir']);
+    Route::patch('/usuarios/{idUsuario}/posts/{idPost}', [PostController::class, 'update']);
+    Route::delete('/usuarios/{idUsuario}/posts/{idPost}', [PostController::class, 'destroy']);
+
+    Route::get('/usuarios/logados', [AuthController::class, 'logados']);
 });

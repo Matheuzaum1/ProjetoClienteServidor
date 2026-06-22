@@ -38,7 +38,7 @@ class UsuarioController extends Controller
         $usuarios = $query->get()->map(function ($user) use ($isAdmin) {
             $data = [
                 'id' => (string) $user->id,
-                'nome_completo' => $user->nome,
+                'nome' => $user->nome,
                 'usuario' => $user->usuario,
                 'biografia' => $user->biografia,
                 'foto_url' => $user->foto_url,
@@ -132,7 +132,7 @@ class UsuarioController extends Controller
 
         $response = ApiResponse::success('USUARIO_ENCONTRADO', 'Dados do usuário recuperados', [
             'id' => (string) $user->id,
-            'nome_completo' => $user->nome,
+            'nome' => $user->nome,
             'usuario' => $user->usuario,
             'email' => $user->email,
             'biografia' => $user->biografia,

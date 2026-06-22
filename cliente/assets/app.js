@@ -235,7 +235,7 @@ async function request(path, options = {}) {
         const url = candidates[i];
         const hasNext = i < candidates.length - 1;
         try {
-            const r = await fetch(url, { ...options, headers, credentials: 'include' });
+            const r = await fetch(url, { ...options, headers });
             const text = await r.text();
             const parsed = text ? JSON.parse(text) : {};
             if (r.status === 404 && hasNext) {

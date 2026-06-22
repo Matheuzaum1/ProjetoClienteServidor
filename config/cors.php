@@ -2,7 +2,7 @@
 
 return [
 
-    'paths' => ['up', 'usuarios', 'usuarios/*', 'sanctum/csrf-cookie', 'token/refresh'],
+    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
@@ -16,6 +16,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 
 ];
