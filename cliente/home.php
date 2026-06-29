@@ -220,19 +220,37 @@ async function loadFeed() {
             + '<div class="login-form">'
             + '<input id="loginUser" type="text" placeholder="@usuario" value="admin">'
             + '<input id="loginPass" type="password" placeholder="Senha" value="admin">'
-            + '<button id="loginBtn" class="btn-primary">Entrar</button>'
+            + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+            + '<button id="loginBtn" class="btn-primary" style="flex:1;">Entrar</button>'
+            + '<button id="autoLoginAdminBtn" class="btn-secondary" style="flex:1;">🔑 Auto Login Admin</button>'
+            + '<button id="autoLoginUser1Btn" class="btn-secondary" style="flex:1;">👤 Auto Login User1</button>'
+            + '</div>'
             + '<div id="loginError" class="login-error"></div>'
             + '</div>'
             + '</div>';
         document.getElementById('loginBtn').addEventListener('click', doLogin);
+        document.getElementById('autoLoginAdminBtn').addEventListener('click', () => doAutoLoginHome('admin', 'admin123'));
+        document.getElementById('autoLoginUser1Btn').addEventListener('click', () => doAutoLoginHome('user1', 'senha123'));
         for (const id of ['loginUser', 'loginPass']) {
             document.getElementById(id).addEventListener('keydown', e => {
                 if (e.key === 'Enter') doLogin();
             });
         }
+
+        // Auto-login attempt
+        doAutoLoginHome('admin', 'admin123');
+        return;
     } else {
         const msg = (result.data && result.data.mensagem) || (result.error ? 'Erro de conexao: ' + result.error : 'Erro ao carregar feed.');
         container.innerHTML = '<div class="feed-error">' + escHtml(msg) + '</div>';
+    }
+}
+
+async function doAutoLoginHome(usuario, senha) {
+    const result = await request('/usuarios/login', { method: 'POST', body: JSON.stringify({ usuario, senha }) });
+    if (result.ok && result.data && result.data.dados && result.data.dados.token) {
+        updateLoginStatus();
+        loadFeed();
     }
 }
 
@@ -316,8 +334,8 @@ function renderFeed() {
         const initial = authorName.charAt(0).toUpperCase();
         const authorFoto = author.foto || '';
         const avatarStyle = authorFoto ? 'background:url(' + escHtml(authorFoto) + ') center/cover;' : '';
-        const imgHtml = p.imagem && p.imagem.startsWith('data:')
-            ? '<img class="feed-post-img" src="' + p.imagem + '" alt="Post" loading="lazy">'
+        const imgHtml = p.imagem
+            ? '<img class="feed-post-img" src="' + escHtml(p.imagem) + '" alt="Post" loading="lazy">'
             : '<div class="feed-post-img-placeholder">📷</div>';
         const timeHtml = p.created_at ? '<div class="post-time">' + new Date(p.created_at).toLocaleString('pt-BR') + '</div>' : '';
         const likeDisabled = !isLoggedIn ? ' disabled style="opacity:0.4;cursor:not-allowed;"' : '';

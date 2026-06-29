@@ -21,6 +21,9 @@ Route::post('/token/refresh', [AuthController::class, 'refresh']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/feed', [PostController::class, 'feed']);
+    Route::get('/posts', [PostController::class, 'listAll']);
+    Route::get('/usuarios-com-posts', [PostController::class, 'usersWithPosts']);
+
     Route::get('/usuarios', [UsuarioController::class, 'index']);
     Route::get('/usuarios/logados', [AuthController::class, 'logados']);
     Route::get('/usuarios/{id}', [UsuarioController::class, 'show']);

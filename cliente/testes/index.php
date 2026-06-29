@@ -70,6 +70,10 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <input name="senha" placeholder="Senha" type="password" required>
                     <button type="submit" class="btn-primary">Entrar</button>
                 </form>
+                <div style="padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="adminLoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">🔑 Login Admin</button>
+                    <button id="user1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">👤 Login User1</button>
+                </div>
             </div>
 
             <div class="card">
@@ -202,7 +206,10 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             <div class="card">
                 <div class="card-header">📋 Listar Posts</div>
                 <form id="listPostsForm" class="card-form">
-                    <input name="idUsuario" placeholder="ID do usuário" required>
+                    <input name="idUsuario" id="listPostsUserId" placeholder="ID do usuário" required>
+                    <select id="listPostsUserSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);margin-bottom:8px;">
+                        <option value="">-- Carregar usuários com posts --</option>
+                    </select>
                     <button type="submit" class="btn-primary">Listar</button>
                 </form>
                 <div style="padding:0 16px 16px">
@@ -228,7 +235,26 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-secondary">Descurtir</button>
                 </form>
             </div>
-
+            <div class="card">
+                <div class="card-header">📋 Listar Todos os Posts</div>
+                <div class="card-form" style="padding-bottom:0">
+                    <button id="listAllPostsBtn" class="btn-primary">Listar todos</button>
+                </div>
+                <div style="padding:0 16px 16px">
+                    <div class="label">Postagens</div>
+                    <pre id="listAllPostsOutput">Clique em Listar todos para ver as postagens.</pre>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">👥 Usuários com Posts</div>
+                <div class="card-form" style="padding-bottom:0">
+                    <button id="loadUsersWithPostsBtn" class="btn-primary">Carregar</button>
+                </div>
+                <div style="padding:0 16px 16px">
+                    <div class="label">Usuários que têm postagens</div>
+                    <pre id="usersWithPostsOutput">Clique em Carregar para ver.</pre>
+                </div>
+            </div>
         </div>
 
         <!-- Response Panel -->

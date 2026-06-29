@@ -88,14 +88,14 @@ class PostController extends Controller
             'ip' => request()->ip(),
         ]);
 
-        $response = [
-            'body' => [
-                'status' => 'sucesso',
-                'codigo' => 'POST_CRIADO',
-                'mensagem' => 'Post criado com sucesso',
+        $response = ApiResponse::success('POST_CRIADO', 'Post criado com sucesso', [
+            'post' => [
+                'id' => (string) $post->id,
+                'imagem' => $post->imagem,
+                'legenda' => $post->legenda,
+                'curtidas' => '0',
             ],
-            'statusCode' => 201,
-        ];
+        ], 201);
 
         return response()->json($response['body'], $response['statusCode']);
     }
@@ -257,6 +257,69 @@ class PostController extends Controller
         return response()->json($response['body'], $response['statusCode']);
     }
 
+    public function listAll(): JsonResponse
+    {
+        $posts = Post::query()
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($post) {
+                $user = $post->user;
+                return [
+                    'id' => (string) $post->id,
+                    'legenda' => $post->legenda,
+                    'imagem' => $post->imagem,
+                    'curtidas' => (string) Curtida::where('post_id', $post->id)->count(),
+                    'usuario' => [
+                        'id' => (string) $user->id,
+                        'nome' => $user->nome,
+                        'usuario' => $user->usuario,
+                    ],
+                    'created_at' => $post->created_at?->toISOString(),
+                ];
+            });
+
+        $body = [
+            'status' => 'sucesso',
+            'codigo' => 'LISTAGEM_TODOS_POSTS_SUCESSO',
+            'mensagem' => 'Posts listados com sucesso',
+            'posts' => $posts,
+        ];
+
+        return response()->json($body, 200);
+    }
+
+    public function usersWithPosts(): JsonResponse
+    {
+        $userIds = Post::query()
+            ->select('user_id')
+            ->distinct()
+            ->pluck('user_id');
+
+        $users = User::query()
+            ->whereIn('id', $userIds)
+            ->where('ativo', true)
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => (string) $user->id,
+                    'nome' => $user->nome,
+                    'usuario' => $user->usuario,
+                    'biografia' => $user->biografia,
+                    'foto_url' => $user->foto_url,
+                ];
+            });
+
+        $body = [
+            'status' => 'sucesso',
+            'codigo' => 'USUARIOS_COM_POSTS',
+            'mensagem' => 'Usuários com posts listados com sucesso',
+            'usuarios' => $users,
+        ];
+
+        return response()->json($body, 200);
+    }
+
     public function feed(): JsonResponse
     {
         $posts = Post::query()
@@ -274,7 +337,7 @@ class PostController extends Controller
                         'id' => (string) $user->id,
                         'nome' => $user->nome,
                         'usuario' => $user->usuario,
-                        'foto' => $user->foto,
+                        'foto' => $user->foto_url,
                     ],
                     'created_at' => $post->created_at?->toISOString(),
                 ];

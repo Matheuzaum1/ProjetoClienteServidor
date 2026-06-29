@@ -1,5 +1,5 @@
 {
-  "serverIp": "127.0.0.1",
-  "serverPort": "25000",
-  "baseUrl": "http://127.0.0.1:25000"
+  "serverIp": "10.20.8.13",
+  "baseUrl": "http://10.20.8.13:22222",
+  "serverPort": "22222"
 }

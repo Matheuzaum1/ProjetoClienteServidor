@@ -325,6 +325,14 @@ function formatLogadosList(usuarios) {
     return usuarios.map(u => `${u.id} | @${u.usuario} | ${u.nome} | IP: ${u.ip || 'N/A'} | Desde: ${u.logged_in_at || 'N/A'}`).join('\n');
 }
 
+function formatAllPostsList(posts) {
+    if (!posts || !posts.length) return 'Nenhum post encontrado.';
+    return posts.map(p => {
+        const author = p.usuario || {};
+        return `[ID: ${p.id}] @${author.usuario || '?'} | Curtidas: ${p.curtidas} | ${p.legenda}`;
+    }).join('\n');
+}
+
 function formatUsersList(result) {
     if (!result.ok || !result.data || !result.data.dados || !Array.isArray(result.data.dados.usuarios)) {
         return 'A listagem não retornou usuários.';
@@ -345,6 +353,35 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     } catch (error) { setOutput({ erro: error.message }); hideLoading(); }
 });
 
+async function doAutoLogin(usuario, senha) {
+    try {
+        const result = await request('/usuarios/login', { method: 'POST', body: JSON.stringify({ usuario, senha }) });
+        setOutput(result);
+        if (result.ok && result.data && result.data.dados) {
+            const d = result.data.dados;
+            if (d.refresh_token) localStorage.setItem('ep1_fallback_refresh', d.refresh_token);
+            if (d.usuario) {
+                localStorage.setItem(userStorageKey, JSON.stringify(d.usuario));
+                loadUserInfo();
+                autoFillUserId();
+            }
+        }
+    } catch (error) { setOutput({ erro: error.message }); hideLoading(); }
+}
+
+function autoFillUserId() {
+    const userData = localStorage.getItem(userStorageKey);
+    if (userData) {
+        try {
+            const user = JSON.parse(userData);
+            const idUsuarioInput = document.querySelector('#createPostForm input[name="idUsuario"]');
+            if (idUsuarioInput) idUsuarioInput.value = user.id;
+            const listIdInput = document.querySelector('#listPostsForm input[name="idUsuario"]');
+            if (listIdInput) listIdInput.value = user.id;
+        } catch {}
+    }
+}
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -356,10 +393,21 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             if (d.usuario) {
                 localStorage.setItem(userStorageKey, JSON.stringify(d.usuario));
                 loadUserInfo();
+                autoFillUserId();
             }
         }
     } catch (error) { setOutput({ erro: error.message }); hideLoading(); }
 });
+
+const adminLoginBtn = document.getElementById('adminLoginBtn');
+if (adminLoginBtn) {
+    adminLoginBtn.addEventListener('click', () => doAutoLogin('admin', 'admin123'));
+}
+
+const user1LoginBtn = document.getElementById('user1LoginBtn');
+if (user1LoginBtn) {
+    user1LoginBtn.addEventListener('click', () => doAutoLogin('user1', 'senha123'));
+}
 
 document.getElementById('showForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -488,6 +536,83 @@ document.getElementById('listPostsForm').addEventListener('submit', async (e) =>
         hideLoading();
     }
 });
+
+const listAllPostsBtn = document.getElementById('listAllPostsBtn');
+if (listAllPostsBtn) {
+    listAllPostsBtn.addEventListener('click', async () => {
+        try {
+            const result = await request('/posts', { method: 'GET' });
+            setOutput(result);
+            const listAllOutput = document.getElementById('listAllPostsOutput');
+            if (listAllOutput) {
+                if (result.ok && result.data && result.data.posts) {
+                    listAllOutput.textContent = formatAllPostsList(result.data.posts);
+                } else if (result.data && result.data.mensagem) {
+                    listAllOutput.textContent = result.data.mensagem;
+                } else {
+                    listAllOutput.textContent = 'Nenhum post encontrado.';
+                }
+            }
+        } catch (error) {
+            setOutput({ erro: error.message });
+            const listAllOutput = document.getElementById('listAllPostsOutput');
+            if (listAllOutput) listAllOutput.textContent = `Erro: ${error.message}`;
+            hideLoading();
+        }
+    });
+}
+
+const loadUsersWithPostsBtn = document.getElementById('loadUsersWithPostsBtn');
+if (loadUsersWithPostsBtn) {
+    loadUsersWithPostsBtn.addEventListener('click', async () => {
+        try {
+            const result = await request('/usuarios-com-posts', { method: 'GET' });
+            setOutput(result);
+            const usersOutput = document.getElementById('usersWithPostsOutput');
+            if (usersOutput) {
+                if (result.ok && result.data && result.data.usuarios) {
+                    const lines = result.data.usuarios.map(u =>
+                        `${u.id} | @${u.usuario} | ${u.nome || '-'}`
+                    );
+                    usersOutput.textContent = lines.length ? lines.join('\n') : 'Nenhum usuário com posts.';
+                } else if (result.data && result.data.mensagem) {
+                    usersOutput.textContent = result.data.mensagem;
+                } else {
+                    usersOutput.textContent = 'Nenhum usuário com posts.';
+                }
+            }
+            populateUsersWithPostsSelect(result);
+        } catch (error) {
+            setOutput({ erro: error.message });
+            const usersOutput = document.getElementById('usersWithPostsOutput');
+            if (usersOutput) usersOutput.textContent = `Erro: ${error.message}`;
+            hideLoading();
+        }
+    });
+}
+
+async function populateUsersWithPostsSelect(result) {
+    const select = document.getElementById('listPostsUserSelect');
+    if (!select) return;
+    let users = [];
+    if (result && result.ok && result.data && result.data.usuarios) {
+        users = result.data.usuarios;
+    } else {
+        const r = await request('/usuarios-com-posts', { method: 'GET' });
+        if (r.ok && r.data && r.data.usuarios) users = r.data.usuarios;
+    }
+    select.innerHTML = '<option value="">-- Selecione um usuário --</option>';
+    users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `@${u.usuario} (ID: ${u.id}) - ${u.nome || ''}`;
+        select.appendChild(opt);
+    });
+    select.addEventListener('change', () => {
+        const idInput = document.getElementById('listPostsUserId');
+        if (idInput) idInput.value = select.value;
+    });
+}
 
 document.getElementById('likePostForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -620,6 +745,8 @@ clearClientLogsButton.addEventListener('click', () => { localStorage.removeItem(
 
 // Init
 loadUserInfo();
+autoFillUserId();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente EP-3 pronto. Configure o servidor.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });
 renderClientLogs();
+populateUsersWithPostsSelect(null);
