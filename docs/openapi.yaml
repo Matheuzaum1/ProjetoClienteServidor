@@ -1,0 +1,1187 @@
+openapi: "3.0.3"
+info:
+  title: API de Rede Social
+  description: |
+    API REST para uma plataforma de rede social com autenticação JWT,
+    gerenciamento de usuários, posts e curtidas.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:25000/api
+    description: Servidor de desenvolvimento
+  - url: http://localhost:25000
+    description: Servidor de desenvolvimento (web routes)
+
+paths:
+  # ──────────────────────────── Health ────────────────────────────
+  /up:
+    get:
+      tags: [Health]
+      summary: Verifica se o servidor está online
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Servidor online
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  mensagem:
+                    type: string
+                    example: Servidor online
+                  meu_ip:
+                    type: string
+                    example: 192.168.1.100
+                  server_ip:
+                    type: string
+                    example: 192.168.1.10
+  # ──────────────────────────── Autenticação ────────────────────────────
+  /usuarios/login:
+    post:
+      tags: [Autenticação]
+      summary: Realiza login do usuário
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        $ref: "#/components/schemas/LoginResponseData"
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /usuarios/logout:
+    post:
+      tags: [Autenticação]
+      summary: Realiza logout do usuário
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Token de refresh para revogação (opcional se enviado via cookie)
+      responses:
+        "200":
+          description: Logout realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /token/refresh:
+    post:
+      tags: [Autenticação]
+      summary: Renova os tokens de acesso
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Token de refresh (opcional se enviado via cookie)
+      responses:
+        "200":
+          description: Tokens renovados com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                            description: Novo JWT access token
+                          refresh_token:
+                            type: string
+                            description: Novo refresh token
+        "400":
+          description: Refresh token ausente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Refresh token inválido ou expirado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  # ──────────────────────────── Usuários ────────────────────────────
+  /usuarios:
+    post:
+      tags: [Usuários]
+      summary: Cadastra um novo usuário
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CadastroRequest"
+      responses:
+        "201":
+          description: Usuário cadastrado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        $ref: "#/components/schemas/UserPublic"
+        "422":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    get:
+      tags: [Usuários]
+      summary: Lista todos os usuários
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuários listados com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        type: object
+                        properties:
+                          usuarios:
+                            type: array
+                            items:
+                              oneOf:
+                                - $ref: "#/components/schemas/UserPublic"
+                                - $ref: "#/components/schemas/UserAdmin"
+  /usuarios/logados:
+    get:
+      tags: [Usuários]
+      summary: Lista usuários com sessão ativa
+      operationId: listLoggedUsers
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuários logados listados com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        type: object
+                        properties:
+                          usuarios:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/SessaoLogada"
+  /usuarios/{id}:
+    get:
+      tags: [Usuários]
+      summary: Obtém dados de um usuário
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dados do usuário recuperados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        $ref: "#/components/schemas/UserPublic"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Usuários]
+      summary: Atualiza um usuário (substituição completa)
+      operationId: updateUserPut
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizacaoRequest"
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        $ref: "#/components/schemas/UserUpdateResponse"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    patch:
+      tags: [Usuários]
+      summary: Atualiza um usuário (parcial)
+      operationId: updateUserPatch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizacaoRequest"
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        $ref: "#/components/schemas/UserUpdateResponse"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    delete:
+      tags: [Usuários]
+      summary: Remove (desativa) um usuário
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Usuário removido com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  # ──────────────────────────── Posts ────────────────────────────
+  /usuarios/{idUsuario}/posts:
+    get:
+      tags: [Posts]
+      summary: Lista posts de um usuário
+      operationId: listUserPosts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Posts listados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  codigo:
+                    type: string
+                    example: LISTAGEM_POSTS_SUCESSO
+                  mensagem:
+                    type: string
+                    example: Posts listados com sucesso
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PostResumido"
+        "404":
+          description: Nenhum post encontrado / usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Posts]
+      summary: Cria um novo post para um usuário
+      operationId: createPost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imagem, legenda]
+              properties:
+                imagem:
+                  type: string
+                  description: URL da imagem do post
+                  example: https://exemplo.com/imagem.jpg
+                legenda:
+                  type: string
+                  minLength: 5
+                  maxLength: 200
+                  description: Legenda do post
+                  example: Uma foto incrível do pôr do sol!
+      responses:
+        "201":
+          description: Post criado com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      dados:
+                        type: object
+                        properties:
+                          post:
+                            $ref: "#/components/schemas/PostCriado"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+  /usuarios/{idUsuario}/posts/{idPost}:
+    get:
+      tags: [Posts]
+      summary: Obtém detalhes de um post
+      operationId: getPost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idPost
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post encontrado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  codigo:
+                    type: string
+                    example: POST_ENCONTRADO
+                  mensagem:
+                    type: string
+                    example: Post encontrado com sucesso
+                  dados:
+                    $ref: "#/components/schemas/PostCompleto"
+        "404":
+          description: Post ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Posts]
+      summary: Curtir um post
+      operationId: likePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idPost
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Curtida adicionada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Curtida já existente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Post ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Posts]
+      summary: Atualiza a legenda de um post
+      operationId: updatePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idPost
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [legenda]
+              properties:
+                legenda:
+                  type: string
+                  minLength: 5
+                  maxLength: 200
+                  example: Legenda atualizada!
+      responses:
+        "200":
+          description: Post atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Post ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Erro de validação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+    delete:
+      tags: [Posts]
+      summary: Remove um post
+      operationId: deletePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idPost
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post removido com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Post ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /usuarios/{idUsuario}/posts/{idPost}/curtir:
+    delete:
+      tags: [Posts]
+      summary: Descurtir um post
+      operationId: unlikePost
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: idPost
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Curtida removida com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Curtida inexistente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Post ou usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  # ──────────────────────────── Feed ────────────────────────────
+  /feed:
+    get:
+      tags: [Feed]
+      summary: Carrega o feed de posts
+      operationId: getFeed
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Feed carregado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  codigo:
+                    type: string
+                    example: FEED_CARREGADO
+                  mensagem:
+                    type: string
+                    example: Feed carregado com sucesso
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PostFeed"
+  /posts:
+    get:
+      tags: [Posts]
+      summary: Lista todos os posts
+      operationId: listAllPosts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Posts listados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  codigo:
+                    type: string
+                    example: LISTAGEM_TODOS_POSTS_SUCESSO
+                  mensagem:
+                    type: string
+                    example: Posts listados com sucesso
+                  posts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PostListaCompleta"
+  # ──────────────────────────── Usuários com posts ────────────────────────────
+  /usuarios-com-posts:
+    get:
+      tags: [Usuários]
+      summary: Lista usuários que possuem posts
+      operationId: usersWithPosts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Usuários com posts listados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: sucesso
+                  codigo:
+                    type: string
+                    example: USUARIOS_COM_POSTS
+                  mensagem:
+                    type: string
+                    example: Usuários com posts listados com sucesso
+                  usuarios:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserComPosts"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtido no login
+
+  schemas:
+    # ─── Respostas Padrão ───
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [sucesso]
+          example: sucesso
+        codigo:
+          type: string
+          example: LOGIN_SUCESSO
+        mensagem:
+          type: string
+          example: Operação realizada com sucesso
+      description: Resposta de sucesso base (dados incluso apenas quando presente)
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [erro]
+          example: erro
+        codigo:
+          type: string
+          example: CREDENCIAIS_INVALIDAS
+        mensagem:
+          type: string
+          example: Usuário ou senha inválidos
+        dados:
+          type: array
+          example: []
+          items: {}
+      description: Resposta de erro padrão
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      description: Erro de validação Laravel (422)
+
+    # ─── Requests ───
+    LoginRequest:
+      type: object
+      required: [usuario, senha]
+      properties:
+        usuario:
+          type: string
+          description: Nome de usuário
+          example: admin
+        senha:
+          type: string
+          format: password
+          description: Senha do usuário
+          example: admin123
+
+    CadastroRequest:
+      type: object
+      required: [nome, usuario, email, senha]
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 60
+          description: Nome completo (apenas letras e espaços)
+          example: João Silva
+        usuario:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: ^[a-z0-9_]+$
+          description: Nome de usuário (minúsculas, números e underscore)
+          example: joao_silva
+        email:
+          type: string
+          format: email
+          minLength: 10
+          maxLength: 35
+          description: E-mail do usuário
+          example: joao@exemplo.com
+        senha:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 24
+          pattern: ^[A-Za-z0-9]+$
+          description: Senha (apenas letras e números)
+          example: senha123
+        biografia:
+          type: string
+          maxLength: 150
+          description: Biografia do usuário (opcional)
+          example: Desenvolvedor full-stack
+        foto:
+          type: string
+          description: URL da foto do perfil (opcional)
+          example: https://exemplo.com/foto.jpg
+
+    AtualizacaoRequest:
+      type: object
+      required: [nome, usuario, email]
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 60
+          description: Nome completo (apenas letras e espaços)
+          example: João Silva Atualizado
+        usuario:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: ^[a-z0-9_]+$
+          description: Nome de usuário (minúsculas, números e underscore)
+          example: joao_silva_novo
+        email:
+          type: string
+          format: email
+          minLength: 10
+          maxLength: 35
+          description: E-mail do usuário
+          example: joao.novo@exemplo.com
+        biografia:
+          type: string
+          maxLength: 150
+          description: Biografia do usuário (opcional)
+          example: Desenvolvedor full-stack sênior
+        foto:
+          type: string
+          description: URL da foto do perfil (opcional)
+          example: https://exemplo.com/foto-nova.jpg
+        senha:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 24
+          pattern: ^[A-Za-z0-9]+$
+          description: Nova senha (opcional, apenas letras e números)
+          example: novaSenha123
+
+    # ─── Usuários ───
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID do usuário (string)
+          example: "1"
+        nome:
+          type: string
+          example: João Silva
+        usuario:
+          type: string
+          example: joao_silva
+        email:
+          type: string
+          format: email
+          example: joao@exemplo.com
+        biografia:
+          type: string
+          nullable: true
+          example: Desenvolvedor full-stack
+        foto_url:
+          type: string
+          nullable: true
+          example: https://exemplo.com/foto.jpg
+
+    UserAdmin:
+      allOf:
+        - $ref: "#/components/schemas/UserPublic"
+        - type: object
+          properties:
+            ativo:
+              type: boolean
+              example: true
+            tipo_usuario:
+              type: string
+              enum: [adm, comum]
+              example: comum
+
+    UserComPosts:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        nome:
+          type: string
+          example: João Silva
+        usuario:
+          type: string
+          example: joao_silva
+        biografia:
+          type: string
+          nullable: true
+          example: Desenvolvedor full-stack
+        foto_url:
+          type: string
+          nullable: true
+          example: https://exemplo.com/foto.jpg
+
+    UserUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        nome:
+          type: string
+          example: João Silva Atualizado
+        usuario:
+          type: string
+          example: joao_silva_novo
+        email:
+          type: string
+          format: email
+          example: joao.novo@exemplo.com
+
+    # ─── Login ───
+    LoginResponseData:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: eyJ0eXAiOiJKV1Qi...
+        refresh_token:
+          type: string
+          description: Refresh token para renovar o access token
+          example: abcdef123456...
+        usuario:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "1"
+            nome:
+              type: string
+              example: João Silva
+            email:
+              type: string
+              example: joao@exemplo.com
+            usuario:
+              type: string
+              example: joao_silva
+
+    # ─── Sessão ───
+    SessaoLogada:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        usuario:
+          type: string
+          example: joao_silva
+        nome:
+          type: string
+          example: João Silva
+        ip:
+          type: string
+          example: 192.168.1.100
+        logged_in_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-07-01T10:30:00+00:00"
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-07-01T11:00:00+00:00"
+
+    # ─── Posts ───
+    PostResumido:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        legenda:
+          type: string
+          example: Uma foto incrível do pôr do sol!
+        imagem:
+          type: string
+          example: https://exemplo.com/imagem.jpg
+        curtidas:
+          type: string
+          description: Número de curtidas (string)
+          example: "15"
+
+    PostCriado:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        imagem:
+          type: string
+          example: https://exemplo.com/imagem.jpg
+        legenda:
+          type: string
+          example: Uma foto incrível do pôr do sol!
+        curtidas:
+          type: string
+          example: "0"
+
+    PostCompleto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        legenda:
+          type: string
+          example: Uma foto incrível do pôr do sol!
+        imagem:
+          type: string
+          example: https://exemplo.com/imagem.jpg
+        curtidas:
+          type: string
+          description: Número de curtidas (string)
+          example: "15"
+
+    PostFeed:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        legenda:
+          type: string
+          example: Uma foto incrível do pôr do sol!
+        imagem:
+          type: string
+          example: https://exemplo.com/imagem.jpg
+        curtidas:
+          type: string
+          example: "15"
+        usuario:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "1"
+            nome:
+              type: string
+              example: João Silva
+            usuario:
+              type: string
+              example: joao_silva
+            foto:
+              type: string
+              nullable: true
+              example: https://exemplo.com/foto.jpg
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-07-01T10:30:00.000000Z"
+
+    PostListaCompleta:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        legenda:
+          type: string
+          example: Uma foto incrível do pôr do sol!
+        imagem:
+          type: string
+          example: https://exemplo.com/imagem.jpg
+        curtidas:
+          type: string
+          example: "15"
+        usuario:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "1"
+            nome:
+              type: string
+              example: João Silva
+            usuario:
+              type: string
+              example: joao_silva
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-07-01T10:30:00.000000Z"

@@ -19,7 +19,7 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
         <div class="header-content">
             <div class="logo">📸 <span>Cliente EP-3</span></div>
             <nav style="display:flex;gap:8px;align-items:center;">
-                <a href="home" class="btn-icon" title="Ver feed de posts">📰 Feed</a>
+                <a href="home.php" class="btn-icon" title="Ver feed de posts">📰 Feed</a>
                 <div class="server-config">
                     <input id="serverIp" type="text" placeholder="IP (ex: 127.0.0.1)" class="server-input" value="127.0.0.1" style="width:120px">
                     <input id="serverPort" type="text" placeholder="Porta" class="server-input" value="25000" style="width:70px">
