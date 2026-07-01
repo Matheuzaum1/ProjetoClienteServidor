@@ -230,69 +230,72 @@ function shouldAttachAuthHeader(path, method) {
 
 async function request(path, options = {}) {
     showLoading();
-    const headers = new Headers(options.headers || {});
-    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-    if (!headers.has('Content-Type') && options.body) headers.set('Content-Type', 'application/json');
+    try {
+        const headers = new Headers(options.headers || {});
+        if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+        if (!headers.has('Content-Type') && options.body) headers.set('Content-Type', 'application/json');
 
-    const token = localStorage.getItem(tokenStorageKey);
-    if (token && !headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
-        headers.set('Authorization', `Bearer ${token}`);
-    }
-
-    const candidates = buildRequestCandidates(path);
-    let response, data, usedUrl, lastError;
-
-    for (let i = 0; i < candidates.length; i++) {
-        const url = candidates[i];
-        const hasNext = i < candidates.length - 1;
-        try {
-            const r = await fetchWithTimeout(url, { ...options, headers });
-            const text = await r.text();
-            const parsed = text ? JSON.parse(text) : {};
-            if (r.status === 404 && hasNext) {
-                appendClientLog('warn', 'Endpoint nao encontrado, tentando rota alternativa', { url });
-                continue;
-            }
-            response = r;
-            data = parsed;
-            usedUrl = url;
-            break;
-        } catch (error) {
-            lastError = error;
-            if (!hasNext) throw error;
+        const token = localStorage.getItem(tokenStorageKey);
+        if (token && !headers.has('Authorization') && shouldAttachAuthHeader(path, options.method)) {
+            headers.set('Authorization', `Bearer ${token}`);
         }
-    }
 
-    if (!response) throw lastError || new Error('Falha ao executar requisicao.');
+        const candidates = buildRequestCandidates(path);
+        let response, data, usedUrl, lastError;
 
-    if (response.ok && data && data.dados && data.dados.token) {
-        localStorage.setItem(tokenStorageKey, data.dados.token);
-    }
-
-    if (response.status === 401 && !options._retry) {
-        try {
-            const refreshResult = await request('/token/refresh', { method: 'POST', _retry: true });
-            if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
-                headers.set('Authorization', `Bearer ${refreshResult.data.dados.token}`);
-                hideLoading();
-                return await request(path, { ...options, _retry: true });
+        for (let i = 0; i < candidates.length; i++) {
+            const url = candidates[i];
+            const hasNext = i < candidates.length - 1;
+            try {
+                const r = await fetchWithTimeout(url, { ...options, headers });
+                const text = await r.text();
+                const parsed = text ? JSON.parse(text) : {};
+                if (r.status === 404 && hasNext) {
+                    appendClientLog('warn', 'Endpoint nao encontrado, tentando rota alternativa', { url });
+                    continue;
+                }
+                response = r;
+                data = parsed;
+                usedUrl = url;
+                break;
+            } catch (error) {
+                lastError = error;
+                if (!hasNext) throw error;
             }
-        } catch (e) {
-            console.warn('Refresh failed', e);
         }
+
+        if (!response) throw lastError || new Error('Falha ao executar requisicao.');
+
+        if (response.ok && data && data.dados && data.dados.token) {
+            localStorage.setItem(tokenStorageKey, data.dados.token);
+        }
+
+        if (response.status === 401 && !options._retry) {
+            try {
+                const refreshResult = await request('/token/refresh', { method: 'POST', _retry: true });
+                if (refreshResult && refreshResult.ok && refreshResult.data && refreshResult.data.dados && refreshResult.data.dados.token) {
+                    headers.set('Authorization', `Bearer ${refreshResult.data.dados.token}`);
+                    hideLoading();
+                    return await request(path, { ...options, _retry: true });
+                }
+            } catch (e) {
+                console.warn('Refresh failed', e);
+            }
+        }
+
+        if (!response.ok && data && data.codigo === 'token_invalido') {
+            localStorage.removeItem(tokenStorageKey);
+        }
+
+        const result = { status: response.status, ok: response.ok, data };
+        appendClientLog(response.ok ? 'info' : 'warn', `Requisição para ${path}`, {
+            method: options.method || 'GET', status: response.status, url: usedUrl,
+        });
+
+        return result;
+    } finally {
+        hideLoading();
     }
-
-    if (!response.ok && data && data.codigo === 'token_invalido') {
-        localStorage.removeItem(tokenStorageKey);
-    }
-
-    const result = { status: response.status, ok: response.ok, data };
-    appendClientLog(response.ok ? 'info' : 'warn', `Requisição para ${path}`, {
-        method: options.method || 'GET', status: response.status, url: usedUrl,
-    });
-
-    hideLoading();
-    return result;
 }
 
 async function testServerConnection() {
@@ -312,7 +315,7 @@ async function testServerConnection() {
             if (!hasNext) {
                 appendClientLog('error', 'Falha ao testar conexão', { baseUrl: getBaseUrl(), error: error.message });
                 hideLoading();
-                throw new Error(`Não foi possível conectar: ${error.message}`);
+                throw error;
             }
         }
     }
