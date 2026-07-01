@@ -3,10 +3,35 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UsuarioController;
+use App\Models\Sessao;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return 'Projeto Cliente/Servidor EP3';
+    $logados = Sessao::where('active', true)
+        ->with('user')
+        ->orderBy('last_activity_at', 'desc')
+        ->get()
+        ->map(fn($s) => [
+            'id' => $s->user_id,
+            'nome' => $s->user?->nome ?? 'Desconhecido',
+            'usuario' => $s->user?->usuario ?? '?',
+            'ip' => $s->ip,
+            'login' => $s->logged_in_at?->format('d/m/Y H:i:s'),
+        ]);
+
+    $disponiveis = User::where('ativo', true)->get()->map(fn($u) => [
+        'id' => $u->id,
+        'nome' => $u->nome,
+        'usuario' => $u->usuario,
+        'tipo' => $u->tipo_usuario,
+        'senha' => $u->usuario === 'admin' ? 'admin123' : 'senha123',
+    ]);
+
+    return view()->file(__DIR__ . '/../resources/views/server-status.blade.php', [
+        'logados' => $logados,
+        'disponiveis' => $disponiveis,
+    ]);
 });
 
 Route::get('/up', function () {
