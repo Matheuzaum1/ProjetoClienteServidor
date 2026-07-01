@@ -7,7 +7,7 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cliente EP3 - Testes</title>
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 <div class="loading-overlay" id="loadingOverlay">
@@ -15,20 +15,22 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
 </div>
 
 <div class="app-container">
-    <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">📸 <span>Instagram EP-3</span></div>
-            <div class="server-config">
-                <input id="serverIp" type="text" placeholder="IP (ex: 127.0.0.1)" class="server-input" value="127.0.0.1" style="width:140px">
-                <input id="serverPort" type="text" placeholder="Porta" class="server-input" value="25000" style="width:80px">
-                <button id="saveBaseUrl" type="button" class="btn-icon" title="Salvar servidor">💾</button>
-                <button id="testConnection" type="button" class="btn-icon" title="Testar conexão">🔗</button>
-            </div>
+            <div class="logo">📸 <span>Cliente EP-3</span></div>
+            <nav style="display:flex;gap:8px;align-items:center;">
+                <a href="home" class="btn-icon" title="Ver feed de posts">📰 Feed</a>
+                <div class="server-config">
+                    <input id="serverIp" type="text" placeholder="IP (ex: 127.0.0.1)" class="server-input" value="127.0.0.1" style="width:120px">
+                    <input id="serverPort" type="text" placeholder="Porta" class="server-input" value="25000" style="width:70px">
+                    <button id="saveBaseUrl" type="button" class="btn-icon" title="Salvar servidor">💾</button>
+                    <button id="testConnection" type="button" class="btn-icon" title="Testar conexão">🔗</button>
+                </div>
+                <span id="clientIpDisplay" class="ip-badge" title="Meu IP">🌐 --</span>
+            </nav>
         </div>
     </header>
 
-    <!-- User Bar -->
     <div class="user-bar" id="userBar">
         <div class="user-avatar" id="userAvatar">U</div>
         <div class="user-info">
@@ -38,17 +40,14 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
         <button class="btn-logout-small" id="panelLogoutBtn">Sair</button>
     </div>
 
-    <!-- Quick Panel -->
     <div class="quick-panel">
-        <button id="quickListUsersBtn" class="btn-primary">Listar usuários</button>
-        <button id="quickListLogadosBtn" class="btn-secondary">Usuários logados</button>
+        <button id="quickListUsersBtn" class="btn-primary">Listar usuários <span style="font-size:11px;opacity:0.7">(Item 6)</span></button>
+        <button id="quickListLogadosBtn" class="btn-secondary">Usuários logados <span style="font-size:11px;opacity:0.7">(Item 10)</span></button>
         <pre id="quickListUsersOutput">Clique em um botão para ver o resultado.</pre>
     </div>
 
-    <!-- Forms Grid -->
     <main class="main-content">
-        <!-- Seção Autenticação -->
-        <h2 class="section-title">Autenticação <span class="item-badge">Login/Logout</span></h2>
+        <h2 class="section-title">Autenticação</h2>
         <div class="card-grid">
             <div class="card">
                 <div class="card-header">📝 Cadastro</div>
@@ -62,7 +61,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Cadastrar</button>
                 </form>
             </div>
-
             <div class="card">
                 <div class="card-header">🔐 Login</div>
                 <form id="loginForm" class="card-form">
@@ -73,9 +71,10 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                 <div style="padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;">
                     <button id="adminLoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">🔑 Login Admin</button>
                     <button id="user1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">👤 Login User1</button>
+                    <button id="autor1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">✍️ Login Autor1</button>
+                    <button id="leitor1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">📖 Login Leitor1</button>
                 </div>
             </div>
-
             <div class="card">
                 <div class="card-header">🚪 Logout</div>
                 <form id="logoutForm" class="card-form">
@@ -84,7 +83,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             </div>
         </div>
 
-        <!-- Seção Usuários -->
         <h2 class="section-title">Usuários <span class="item-badge">Item 6</span></h2>
         <div class="card-grid">
             <div class="card">
@@ -94,7 +92,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Buscar</button>
                 </form>
             </div>
-
             <div class="card">
                 <div class="card-header">✏️ Editar Perfil</div>
                 <form id="updateForm" class="card-form">
@@ -108,7 +105,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Salvar</button>
                 </form>
             </div>
-
             <div class="card">
                 <div class="card-header">🗑️ Excluir Conta</div>
                 <form id="deleteForm" class="card-form">
@@ -116,9 +112,8 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-danger">Excluir</button>
                 </form>
             </div>
-
             <div class="card">
-                <div class="card-header">📋 Listar Usuários</div>
+                <div class="card-header">📋 Listar Usuários <span class="item-badge">Item 6</span></div>
                 <form id="listUsersForm" class="card-form">
                     <button type="submit" class="btn-primary">Buscar</button>
                 </form>
@@ -127,7 +122,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <pre id="listUsersOutput">Clique em Buscar para listar.</pre>
                 </div>
             </div>
-
             <div class="card">
                 <div class="card-header">🟢 Usuários Logados <span class="item-badge">Item 10</span></div>
                 <form id="listLogadosForm" class="card-form">
@@ -138,7 +132,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <pre id="listLogadosOutput">Clique em Buscar para ver logados.</pre>
                 </div>
             </div>
-
             <div class="card">
                 <div class="card-header">✏️ Editar Outro Usuário</div>
                 <form id="editOtherForm" class="card-form">
@@ -152,7 +145,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Salvar</button>
                 </form>
             </div>
-
             <div class="card">
                 <div class="card-header">🗑️ Deletar Outro Usuário</div>
                 <form id="deleteOtherForm" class="card-form">
@@ -162,11 +154,10 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             </div>
         </div>
 
-        <!-- Seção Posts -->
         <h2 class="section-title">Posts <span class="item-badge">Itens 2,3,4,5,7,8,9</span></h2>
         <div class="card-grid">
             <div class="card">
-                <div class="card-header">📸 Criar Post</div>
+                <div class="card-header">📸 Criar Post <span class="item-badge">Item 2</span></div>
                 <form id="createPostForm" class="card-form">
                     <input name="idUsuario" placeholder="ID do usuário (autor)" required>
                     <textarea name="imagem" placeholder="Imagem (Base64 ou URL)" rows="2" required></textarea>
@@ -174,18 +165,16 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Publicar</button>
                 </form>
             </div>
-
             <div class="card">
-                <div class="card-header">🔍 Consultar Post</div>
+                <div class="card-header">🔍 Consultar Post <span class="item-badge">Item 3</span></div>
                 <form id="getPostForm" class="card-form">
                     <input name="idUsuario" placeholder="ID do usuário (autor)" required>
                     <input name="idPost" placeholder="ID do post" required>
                     <button type="submit" class="btn-primary">Buscar</button>
                 </form>
             </div>
-
             <div class="card">
-                <div class="card-header">✏️ Atualizar Post</div>
+                <div class="card-header">✏️ Atualizar Post <span class="item-badge">Item 4</span></div>
                 <form id="updatePostForm" class="card-form">
                     <input name="idUsuario" placeholder="ID do usuário (autor)" required>
                     <input name="idPost" placeholder="ID do post" required>
@@ -193,18 +182,16 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Atualizar</button>
                 </form>
             </div>
-
             <div class="card">
-                <div class="card-header">🗑️ Deletar Post</div>
+                <div class="card-header">🗑️ Deletar Post <span class="item-badge">Item 5</span></div>
                 <form id="deletePostForm" class="card-form">
                     <input name="idUsuario" placeholder="ID do usuário (autor)" required>
                     <input name="idPost" placeholder="ID do post" required>
                     <button type="submit" class="btn-danger">Deletar</button>
                 </form>
             </div>
-
             <div class="card">
-                <div class="card-header">📋 Listar Posts</div>
+                <div class="card-header">📋 Listar Posts <span class="item-badge">Item 7</span></div>
                 <form id="listPostsForm" class="card-form">
                     <input name="idUsuario" id="listPostsUserId" placeholder="ID do usuário" required>
                     <select id="listPostsUserSelect" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);margin-bottom:8px;">
@@ -217,7 +204,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <pre id="listPostsOutput">Clique em Listar para ver as postagens.</pre>
                 </div>
             </div>
-
             <div class="card">
                 <div class="card-header">❤️ Curtir Post <span class="item-badge">Item 8</span></div>
                 <form id="likePostForm" class="card-form">
@@ -226,7 +212,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button type="submit" class="btn-primary">Curtir</button>
                 </form>
             </div>
-
             <div class="card">
                 <div class="card-header">💔 Descurtir Post <span class="item-badge">Item 9</span></div>
                 <form id="unlikePostForm" class="card-form">
@@ -257,7 +242,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             </div>
         </div>
 
-        <!-- Response Panel -->
         <div class="panel">
             <div class="panel-header">
                 <h3>Resposta</h3>
@@ -275,7 +259,6 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
             </div>
         </div>
 
-        <!-- Logs Panel -->
         <div class="panel">
             <div class="panel-header">
                 <h3>Logs</h3>

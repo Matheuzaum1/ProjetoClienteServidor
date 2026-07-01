@@ -26,6 +26,7 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                     <button id="saveBaseUrl" type="button" class="btn-icon" title="Salvar servidor">💾</button>
                     <button id="testConnection" type="button" class="btn-icon" title="Testar conexão">🔗</button>
                 </div>
+                <span id="clientIpDisplay" class="ip-badge" title="Meu IP">🌐 --</span>
             </nav>
         </div>
     </header>
@@ -70,6 +71,8 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : 'http://127.0.0.1:
                 <div style="padding:0 16px 16px;display:flex;gap:8px;flex-wrap:wrap;">
                     <button id="adminLoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">🔑 Login Admin</button>
                     <button id="user1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">👤 Login User1</button>
+                    <button id="autor1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">✍️ Login Autor1</button>
+                    <button id="leitor1LoginBtn" class="btn-secondary" style="flex:1;font-size:12px;">📖 Login Leitor1</button>
                 </div>
             </div>
             <div class="card">

@@ -7,7 +7,7 @@ use App\Models\Sessao;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+Route::get('/', function (\Illuminate\Http\Request $request) {
     $logados = Sessao::where('active', true)
         ->with('user')
         ->orderBy('last_activity_at', 'desc')
@@ -28,14 +28,23 @@ Route::get('/', function () {
         'senha' => $u->usuario === 'admin' ? 'admin123' : 'senha123',
     ]);
 
+    $serverIps = array_filter([$_SERVER['SERVER_ADDR'] ?? null, gethostbyname(gethostname())]);
+
     return view()->file(__DIR__ . '/../resources/views/server-status.blade.php', [
         'logados' => $logados,
         'disponiveis' => $disponiveis,
+        'meuIp' => $request->ip(),
+        'serverIps' => array_values(array_unique($serverIps)),
     ]);
 });
 
-Route::get('/up', function () {
-    return response()->json(['status' => 'sucesso', 'mensagem' => 'Servidor online']);
+Route::get('/up', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'status' => 'sucesso',
+        'mensagem' => 'Servidor online',
+        'meu_ip' => $request->ip(),
+        'server_ip' => $_SERVER['SERVER_ADDR'] ?? gethostbyname(gethostname()),
+    ]);
 });
 
 Route::post('/usuarios', [UsuarioController::class, 'store']);

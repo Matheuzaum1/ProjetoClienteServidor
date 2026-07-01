@@ -45,5 +45,29 @@ class AdminUserSeeder extends Seeder
                 'tipo_usuario' => 'comum',
             ]
         );
+
+        User::updateOrCreate(
+            ['usuario' => 'autor1'],
+            [
+                'nome' => 'Autor Um',
+                'email' => 'autor1@localhost',
+                'password' => Hash::make('senha123'),
+                'biografia' => 'Usuário autor — cria e gerencia postagens',
+                'ativo' => true,
+                'tipo_usuario' => 'comum',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['usuario' => 'leitor1'],
+            [
+                'nome' => 'Leitor Um',
+                'email' => 'leitor1@localhost',
+                'password' => Hash::make('senha123'),
+                'biografia' => 'Usuário leitor — visualiza e interage com postagens',
+                'ativo' => true,
+                'tipo_usuario' => 'comum',
+            ]
+        );
     }
 }

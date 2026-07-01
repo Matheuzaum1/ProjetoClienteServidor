@@ -94,6 +94,7 @@ $baseUrl = isset($_GET['baseUrl']) ? trim($_GET['baseUrl']) : $defaultUrl;
                     <input id="serverPort" type="text" placeholder="Porta" class="server-input" value="25000" style="width:65px">
                     <button id="saveServerBtn" type="button" class="btn-icon" title="Salvar servidor">💾</button>
                 </div>
+                <span id="clientIpDisplay" class="ip-badge" title="Meu IP">🌐 --</span>
                 <a href="./" class="btn-icon" title="Painel de Testes">🧪</a>
                 <button id="refreshFeedBtn" class="refresh-btn">🔄</button>
             </nav>
@@ -141,6 +142,16 @@ function hideLoading() {
     if (loadingCount <= 0) { loadingCount = 0; document.getElementById('loadingOverlay').classList.remove('active'); }
 }
 
+async function fetchWithTimeout(url, options = {}, timeout = 15000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(id);
+    }
+}
+
 function getBaseUrl() {
     return (localStorage.getItem(baseUrlStorageKey) || <?php echo json_encode($baseUrl); ?>).replace(/\/$/, '');
 }
@@ -179,7 +190,7 @@ async function request(path, options) {
     const p = path.startsWith('/') ? path : '/' + path;
     if (token) headers.set('Authorization', 'Bearer ' + token);
     try {
-        const r = await fetch(getBaseUrl() + p, { ...options, headers });
+        const r = await fetchWithTimeout(getBaseUrl() + p, { ...options, headers });
         const text = await r.text();
         const data = text ? JSON.parse(text) : {};
         if (r.ok && data && data.dados && data.dados.token) {
@@ -224,6 +235,8 @@ async function loadFeed() {
             + '<button id="loginBtn" class="btn-primary" style="flex:1;">Entrar</button>'
             + '<button id="autoLoginAdminBtn" class="btn-secondary" style="flex:1;">🔑 Auto Login Admin</button>'
             + '<button id="autoLoginUser1Btn" class="btn-secondary" style="flex:1;">👤 Auto Login User1</button>'
+            + '<button id="autoLoginAutor1Btn" class="btn-secondary" style="flex:1;">✍️ Auto Login Autor1</button>'
+            + '<button id="autoLoginLeitor1Btn" class="btn-secondary" style="flex:1;">📖 Auto Login Leitor1</button>'
             + '</div>'
             + '<div id="loginError" class="login-error"></div>'
             + '</div>'
@@ -231,6 +244,8 @@ async function loadFeed() {
         document.getElementById('loginBtn').addEventListener('click', doLogin);
         document.getElementById('autoLoginAdminBtn').addEventListener('click', () => doAutoLoginHome('admin', 'admin123'));
         document.getElementById('autoLoginUser1Btn').addEventListener('click', () => doAutoLoginHome('user1', 'senha123'));
+        document.getElementById('autoLoginAutor1Btn').addEventListener('click', () => doAutoLoginHome('autor1', 'senha123'));
+        document.getElementById('autoLoginLeitor1Btn').addEventListener('click', () => doAutoLoginHome('leitor1', 'senha123'));
         for (const id of ['loginUser', 'loginPass']) {
             document.getElementById(id).addEventListener('keydown', e => {
                 if (e.key === 'Enter') doLogin();
@@ -244,6 +259,16 @@ async function loadFeed() {
         const msg = (result.data && result.data.mensagem) || (result.error ? 'Erro de conexao: ' + result.error : 'Erro ao carregar feed.');
         container.innerHTML = '<div class="feed-error">' + escHtml(msg) + '</div>';
     }
+}
+
+async function loadClientIp() {
+    try {
+        const result = await request('/up', { method: 'GET' });
+        if (result.ok && result.data && result.data.meu_ip) {
+            const el = document.getElementById('clientIpDisplay');
+            if (el) el.textContent = '🌐 ' + result.data.meu_ip;
+        }
+    } catch (_) {}
 }
 
 async function doAutoLoginHome(usuario, senha) {
@@ -445,6 +470,7 @@ document.getElementById('feedSearch').addEventListener('input', () => {
 });
 
 updateLoginStatus();
+loadClientIp();
 loadFeed();
 </script>
 </body>

@@ -25,6 +25,11 @@ class PostsSeeder extends Seeder
             ['legenda' => 'Finalmente terminando o projeto de Cliente/Servidor', 'imagem' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='],
         ];
 
+        $autorPosts = [
+            ['legenda' => 'Postagem criada pelo autor1 — testando o CRUD', 'imagem' => ''],
+            ['legenda' => 'Autor1 editou esta legenda para mostrar atualização de post', 'imagem' => 'https://picsum.photos/400/300?random=1'],
+        ];
+
         foreach ($users as $user) {
             $count = rand(1, 3);
             for ($i = 0; $i < $count; $i++) {
@@ -33,6 +38,17 @@ class PostsSeeder extends Seeder
                     'user_id' => $user->id,
                     'imagem' => $postData['imagem'],
                     'legenda' => $postData['legenda'] . ' (Post #' . ($i + 1) . ' de @' . $user->usuario . ')',
+                ]);
+            }
+        }
+
+        $autor = User::where('usuario', 'autor1')->first();
+        if ($autor) {
+            foreach ($autorPosts as $ap) {
+                Post::create([
+                    'user_id' => $autor->id,
+                    'imagem' => $ap['imagem'],
+                    'legenda' => $ap['legenda'],
                 ]);
             }
         }

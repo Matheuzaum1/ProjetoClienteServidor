@@ -20,6 +20,7 @@ const userAvatar = document.getElementById('userAvatar');
 const userName = document.getElementById('userName');
 const userDetail = document.getElementById('userDetail');
 const panelLogoutBtn = document.getElementById('panelLogoutBtn');
+const clientIpDisplay = document.getElementById('clientIpDisplay');
 
 const tokenStorageKey = 'ep1_jwt_token';
 const userStorageKey = 'ep1_user_data';
@@ -27,6 +28,16 @@ const baseUrlStorageKey = 'ep1_api_base_url';
 const clientLogStorageKey = 'ep1_client_logs';
 
 let loadingCount = 0;
+
+async function fetchWithTimeout(url, options = {}, timeout = 15000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(id);
+    }
+}
 
 function showToast(message, type = 'info', duration = 4000) {
     const container = document.querySelector('.toast-container') || (() => {
@@ -235,7 +246,7 @@ async function request(path, options = {}) {
         const url = candidates[i];
         const hasNext = i < candidates.length - 1;
         try {
-            const r = await fetch(url, { ...options, headers });
+            const r = await fetchWithTimeout(url, { ...options, headers });
             const text = await r.text();
             const parsed = text ? JSON.parse(text) : {};
             if (r.status === 404 && hasNext) {
@@ -289,14 +300,21 @@ async function testServerConnection() {
     const base = getBaseUrl();
     const candidates = /\/api$/i.test(base) ? [`${base}/up`] : [`${base}/up`, `${base}/api/up`];
 
-    let response, usedUrl;
+    let response, usedUrl, lastError;
     for (let i = 0; i < candidates.length; i++) {
         const url = candidates[i];
         const hasNext = i < candidates.length - 1;
         try {
-            const r = await fetch(url, { headers: { Accept: 'application/json, text/plain, */*' } });
+            const r = await fetchWithTimeout(url, { headers: { Accept: 'application/json, text/plain, */*' } }, 10000);
             if (r.ok || !hasNext) { response = r; usedUrl = url; break; }
-        } catch (error) { if (!hasNext) throw error; }
+        } catch (error) {
+            lastError = error;
+            if (!hasNext) {
+                appendClientLog('error', 'Falha ao testar conexão', { baseUrl: getBaseUrl(), error: error.message });
+                hideLoading();
+                throw new Error(`Não foi possível conectar: ${error.message}`);
+            }
+        }
     }
 
     if (!response || !response.ok) {
@@ -353,6 +371,15 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     } catch (error) { setOutput({ erro: error.message }); hideLoading(); }
 });
 
+async function loadClientIp() {
+    try {
+        const result = await request('/up', { method: 'GET' });
+        if (result.ok && result.data && result.data.meu_ip) {
+            if (clientIpDisplay) clientIpDisplay.textContent = '🌐 ' + result.data.meu_ip;
+        }
+    } catch (_) {}
+}
+
 async function doAutoLogin(usuario, senha) {
     try {
         const result = await request('/usuarios/login', { method: 'POST', body: JSON.stringify({ usuario, senha }) });
@@ -407,6 +434,16 @@ if (adminLoginBtn) {
 const user1LoginBtn = document.getElementById('user1LoginBtn');
 if (user1LoginBtn) {
     user1LoginBtn.addEventListener('click', () => doAutoLogin('user1', 'senha123'));
+}
+
+const autor1LoginBtn = document.getElementById('autor1LoginBtn');
+if (autor1LoginBtn) {
+    autor1LoginBtn.addEventListener('click', () => doAutoLogin('autor1', 'senha123'));
+}
+
+const leitor1LoginBtn = document.getElementById('leitor1LoginBtn');
+if (leitor1LoginBtn) {
+    leitor1LoginBtn.addEventListener('click', () => doAutoLogin('leitor1', 'senha123'));
 }
 
 document.getElementById('showForm').addEventListener('submit', async (e) => {
@@ -746,6 +783,7 @@ clearClientLogsButton.addEventListener('click', () => { localStorage.removeItem(
 // Init
 loadUserInfo();
 autoFillUserId();
+loadClientIp();
 setOutput({ ok: true, data: { status: 'sucesso', mensagem: 'Cliente EP-3 pronto. Configure o servidor.' } });
 appendClientLog('info', 'Cliente carregado', { baseUrl: getBaseUrl() });
 renderClientLogs();

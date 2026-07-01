@@ -76,6 +76,7 @@ input, textarea, button, pre { font-family: inherit; }
 }
 
 .server-input::placeholder { color: var(--text-tertiary); }
+.ip-badge { font-size: 11px; color: var(--text-secondary); background: var(--bg-tertiary); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 
 .btn-icon {
     width: 32px; height: 32px;

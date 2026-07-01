@@ -37,6 +37,19 @@
         </div>
 
         <div class="card">
+            <h2>🌐 Informações de IP</h2>
+            <table>
+                <thead>
+                    <tr><th>Origem</th><th>Endereço</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Servidor</td><td><code>{{ implode(', ', $serverIps) }}</code></td></tr>
+                    <tr><td>Meu IP (cliente)</td><td><code>{{ $meuIp }}</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
             <h2>🟢 Usuários Logados <span>({{ $logados->count() }})</span></h2>
             @if ($logados->isEmpty())
                 <div class="vazio">Nenhum usuário logado no momento.</div>
